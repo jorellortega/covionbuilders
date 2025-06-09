@@ -1,11 +1,11 @@
 "use client";
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 import { Button } from '@/components/ui/button';
 
-export default function ApplyPage() {
+function ApplyPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [submitted, setSubmitted] = useState(false);
@@ -126,5 +126,13 @@ export default function ApplyPage() {
       </section>
       <Footer />
     </div>
+  );
+}
+
+export default function ApplyPageWrapper() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ApplyPage />
+    </Suspense>
   );
 } 
