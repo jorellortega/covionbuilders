@@ -1,11 +1,12 @@
 "use client";
+console.log("CLIENT ENV:", process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
+import { getSupabaseClient } from '@/lib/supabaseClient';
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' });
@@ -23,6 +24,7 @@ export default function LoginPage() {
       setError('Please enter both email and password.');
       return;
     }
+    const supabase = getSupabaseClient();
     const { error } = await supabase.auth.signInWithPassword({
       email: form.email,
       password: form.password,
