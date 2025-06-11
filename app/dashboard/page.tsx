@@ -3,8 +3,9 @@ import Header from '@/components/header';
 import Footer from '@/components/footer';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Briefcase, CreditCard, CheckCircle, AlertTriangle, User, PlusCircle, HelpCircle } from 'lucide-react';
-import { useState } from 'react';
+import { Briefcase, CreditCard, CheckCircle, AlertTriangle, User, PlusCircle, HelpCircle, Menu } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 const mockUser = {
   name: 'Jane Doe',
@@ -59,16 +60,119 @@ const stats = [
   },
 ];
 
+const dashboardLinks = [
+  { label: 'Project Overview', href: '/dashboard/projects', icon: <Briefcase className="h-5 w-5" /> },
+  { label: 'Payments & Invoices', href: '/dashboard/payments', icon: <CreditCard className="h-5 w-5" /> },
+  { label: 'Project Timeline', href: '/dashboard/timeline', icon: <CheckCircle className="h-5 w-5" /> },
+  { label: 'Documents', href: '/dashboard/documents', icon: <User className="h-5 w-5" /> },
+  { label: 'Communication & Support', href: '/dashboard/communication', icon: <HelpCircle className="h-5 w-5" /> },
+  { label: 'Progress Photos & Videos', href: '/dashboard/photos', icon: <PlusCircle className="h-5 w-5" /> },
+  { label: 'Change Orders & Approvals', href: '/dashboard/change-orders', icon: <AlertTriangle className="h-5 w-5" /> },
+  { label: 'Reports', href: '/dashboard/reports', icon: <CheckCircle className="h-5 w-5" /> },
+  { label: 'Warranty & Maintenance', href: '/dashboard/warranty', icon: <CheckCircle className="h-5 w-5" /> },
+  { label: 'Feedback & Reviews', href: '/dashboard/feedback', icon: <CheckCircle className="h-5 w-5" /> },
+  { label: 'Messages', href: '/messages', icon: <HelpCircle className="h-5 w-5" /> },
+];
+
 export default function DashboardPage() {
   const activeProjects = mockProjects.filter(p => p.status === 'In Progress');
   const [selectedActive, setSelectedActive] = useState(activeProjects[0]?.name || '');
   const selectedProject = activeProjects.find(p => p.name === selectedActive) || activeProjects[0];
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('userMessages');
+      if (stored) {
+        const msgs = JSON.parse(stored);
+        const unread = msgs.filter((msg: any) => msg.reply && !msg.read).length;
+        setUnreadCount(unread);
+      }
+    }
+  }, []);
 
   return (
     <div className="dark flex min-h-screen flex-col" style={{ backgroundColor: '#000000' }}>
       <Header />
-      <section className="py-10 md:py-16 flex-1">
-        <div className="container mx-auto max-w-3xl flex flex-col gap-8">
+      <div className="flex flex-1 min-h-0">
+        {/* Sidebar */}
+        <aside className="hidden md:flex flex-col w-64 bg-[#141414] border-r border-border/40 p-6 min-h-screen">
+          <button
+            className="mb-6 px-4 py-2 rounded-lg bg-[#232323] text-white font-semibold shadow hover:bg-blue-900/40 transition-colors"
+            onClick={() => {
+              localStorage.removeItem('isLoggedIn');
+              router.push('/login');
+            }}
+          >
+            Logout
+          </button>
+          <nav className="flex flex-col gap-2">
+            {dashboardLinks.map(link => (
+              <Link key={link.href} href={link.href} className="flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-blue-900/40 transition-all">
+                {link.icon}
+                <span className="font-semibold">{link.label}</span>
+                {link.label === 'Messages' && unreadCount > 0 && (
+                  <span className="ml-auto rounded-full bg-emerald-900/40 px-3 py-1 text-xs font-medium text-emerald-400">{unreadCount} new</span>
+                )}
+              </Link>
+            ))}
+          </nav>
+        </aside>
+        {/* Mobile Sidebar Toggle */}
+        <button className="md:hidden fixed top-4 left-4 z-50 bg-[#141414] p-2 rounded-full border border-border/40" onClick={() => setSidebarOpen(!sidebarOpen)}>
+          <Menu className="h-6 w-6 text-white" />
+        </button>
+        {/* Mobile Sidebar Drawer */}
+        {sidebarOpen && (
+          <aside className="fixed inset-0 z-40 bg-black/70 flex">
+            <div className="w-64 bg-[#141414] border-r border-border/40 p-6 min-h-screen flex flex-col">
+              <button
+                className="mb-6 px-4 py-2 rounded-lg bg-[#232323] text-white font-semibold shadow hover:bg-blue-900/40 transition-colors"
+                onClick={() => {
+                  localStorage.removeItem('isLoggedIn');
+                  router.push('/login');
+                }}
+              >
+                Logout
+              </button>
+              <nav className="flex flex-col gap-2">
+                {dashboardLinks.map(link => (
+                  <Link key={link.href} href={link.href} className="flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-blue-900/40 transition-all">
+                    {link.icon}
+                    <span className="font-semibold">{link.label}</span>
+                    {link.label === 'Messages' && unreadCount > 0 && (
+                      <span className="ml-auto rounded-full bg-emerald-900/40 px-3 py-1 text-xs font-medium text-emerald-400">{unreadCount} new</span>
+                    )}
+                  </Link>
+                ))}
+              </nav>
+              <button className="mt-8 text-white underline" onClick={() => setSidebarOpen(false)}>Close</button>
+            </div>
+            <div className="flex-1" onClick={() => setSidebarOpen(false)} />
+          </aside>
+        )}
+        {/* Main Content */}
+        <main className="flex-1 p-8 overflow-y-auto">
+          {/* Messages Card */}
+          <div className="max-w-xl mx-auto mb-8">
+            <div className="rounded-xl border border-border/40 bg-gradient-to-r from-blue-900/60 to-emerald-900/40 shadow-lg p-6 flex flex-col justify-between">
+              <div>
+                <div className="text-2xl font-bold text-white mb-1">Messages</div>
+                <div className="flex flex-wrap gap-4 items-center text-sm mb-2">
+                  <span className="rounded-full bg-blue-900/40 px-3 py-1 text-xs font-medium text-blue-400">Unread</span>
+                  {unreadCount > 0 && <span className="rounded-full bg-emerald-900/40 px-3 py-1 text-xs font-medium text-emerald-400">{unreadCount} new</span>}
+                </div>
+                <div className="text-muted-foreground text-lg">
+                  {unreadCount > 0 ? `You have ${unreadCount} new message${unreadCount > 1 ? 's' : ''}.` : 'Send and view your messages and replies.'}
+                </div>
+              </div>
+              <Link href="/messages" className="mt-4">
+                <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white font-semibold px-8 py-3 text-lg shadow w-full">View Messages</Button>
+              </Link>
+            </div>
+          </div>
           {/* Main Dashboard Content (single column) */}
           {/* Welcome Card at the very top */}
           <div className="rounded-xl border border-border/40 bg-gradient-to-br from-blue-900/30 to-emerald-900/20 p-8 flex flex-col md:flex-row md:items-center md:justify-between mb-2">
@@ -216,8 +320,15 @@ export default function DashboardPage() {
               </table>
             </div>
           </div>
-        </div>
-      </section>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Link href="/contracts" className="p-4 border rounded shadow hover:bg-gray-100">
+              <h2 className="text-xl font-bold">Contract Manager</h2>
+              <p>Manage and sign contracts</p>
+            </Link>
+          </div>
+        </main>
+      </div>
       <Footer />
     </div>
   );

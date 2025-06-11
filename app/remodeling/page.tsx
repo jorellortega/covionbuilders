@@ -9,22 +9,23 @@ export default function RemodelingPage() {
       <Header />
       
       {/* Hero Section */}
-      <section className="relative py-20 md:py-32 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-black z-10" />
-        <div className="absolute inset-0 bg-[url('/remodeling-hero.jpg')] bg-cover bg-center" />
-        <div className="container relative z-20 mx-auto max-w-4xl text-center">
-          <h1 className="mb-6 text-4xl font-bold tracking-tighter md:text-5xl lg:text-6xl text-white">
-            Professional Remodeling Services
+      <section className="relative border-b border-border/40 bg-gradient-to-br from-background via-background/95 to-blue-950/20 py-16 md:py-24 overflow-hidden">
+        <div className="container relative z-20 mx-auto max-w-[800px] text-center">
+          <h1 className="mb-6 text-4xl font-bold tracking-tighter md:text-5xl lg:text-6xl">
+            Professional <span className="bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">Remodeling</span> Services
           </h1>
           <p className="mb-8 text-xl text-muted-foreground">
             Transform your space with our expert remodeling services. We combine modern design with quality craftsmanship to create the perfect environment for your needs.
           </p>
-          <Link href="/quote">
-            <Button size="lg" className="bg-white text-black hover:bg-gray-200">
-              Get a Free Quote
-            </Button>
-          </Link>
         </div>
+        <div
+          className="absolute inset-0 z-0 opacity-[0.03]"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, #4ade80 1px, transparent 1px), linear-gradient(to bottom, #4ade80 1px, transparent 1px)",
+            backgroundSize: "40px 40px",
+          }}
+        ></div>
       </section>
 
       {/* Services Section */}

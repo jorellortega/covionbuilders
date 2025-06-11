@@ -57,6 +57,7 @@ export default function Footer() {
                 { name: "Careers", path: "/careers" },
                 { name: "News", path: "/about" },
                 { name: "Contact", path: "/contact" },
+                { name: "Login", path: "/login" },
               ].map((item) => (
                 <li key={item.name}>
                   <Link href={item.path} className="text-muted-foreground transition-colors hover:text-primary">
@@ -80,7 +81,7 @@ export default function Footer() {
 
         <div className="mt-12 border-t border-border/40 pt-6 text-center text-sm text-muted-foreground">
           <div className="flex flex-col items-center gap-2">
-            <p>© {new Date().getFullYear()} Covion Builders. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} Covion Builders. All rights reserved. <span className="text-xs text-muted-foreground">Developed by JOR.</span></p>
             <a
               href="/login"
               className="inline-block rounded-md bg-gradient-to-r from-blue-600 to-emerald-500 px-4 py-2 text-white font-semibold shadow hover:from-blue-700 hover:to-emerald-600 transition-colors mt-2"

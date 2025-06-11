@@ -5,29 +5,33 @@ import { Button } from '@/components/ui/button';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function LoginPage() {
-  const [form, setForm] = useState({ email: '', password: '', role: 'user' });
+  const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const router = useRouter();
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm({ ...form, [e.target.name]: e.target.value });
     setError('');
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.email || !form.password) {
       setError('Please enter both email and password.');
       return;
     }
-    // Mock role-based redirect
-    if (form.role === 'ceo') {
-      router.push('/ceo');
-    } else {
-      router.push('/dashboard');
+    const { error } = await supabase.auth.signInWithPassword({
+      email: form.email,
+      password: form.password,
+    });
+    if (error) {
+      setError(error.message);
+      return;
     }
+    router.push('/dashboard');
   }
 
   return (
@@ -61,21 +65,11 @@ export default function LoginPage() {
                 required
               />
             </div>
-            <div>
-              <label htmlFor="role" className="block mb-2 text-white font-semibold">Role</label>
-              <select
-                id="role"
-                name="role"
-                value={form.role}
-                onChange={handleChange}
-                className="w-full rounded-md border border-border/40 bg-black/30 p-2 text-white"
-              >
-                <option value="user">User</option>
-                <option value="ceo">CEO</option>
-              </select>
-            </div>
             {error && <div className="text-red-500 text-sm text-center">{error}</div>}
             <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-emerald-500 text-white font-semibold">Log In</Button>
+            <div className="text-center mt-4">
+              <Link href="/signup" className="text-blue-400 hover:underline">Don't have an account? Sign up</Link>
+            </div>
           </form>
         </div>
       </section>

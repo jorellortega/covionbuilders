@@ -1,8 +1,27 @@
+'use client';
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Building2 } from "lucide-react"
+import { useEffect, useState } from "react"
 
 export default function Header() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  useEffect(() => {
+    const checkLogin = () => {
+      setIsLoggedIn(typeof window !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true');
+    };
+    checkLogin();
+    window.addEventListener('storage', checkLogin);
+    return () => window.removeEventListener('storage', checkLogin);
+  }, []);
+
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('isLoggedIn');
+      setIsLoggedIn(false);
+    }
+  };
+
   return (
     <>
       {/* Header */}
@@ -23,13 +42,15 @@ export default function Header() {
                 { name: "About", path: "/about" },
                 { name: "Careers", path: "/careers" },
                 { name: "Contact", path: "/contact" },
-              ].map((item) => (
-                <li key={item.name}>
-                  <Link href={item.path} className="text-foreground/80 transition-colors hover:text-primary">
-                    {item.name}
-                  </Link>
-                </li>
-              ))}
+              ]
+                .concat(isLoggedIn ? [{ name: "Dashboard", path: "/dashboard" }] : [])
+                .map((item) => (
+                  <li key={item.name}>
+                    <Link href={item.path} className="text-foreground/80 transition-colors hover:text-primary">
+                      {item.name}
+                    </Link>
+                  </li>
+                ))}
             </ul>
           </nav>
 
@@ -40,6 +61,11 @@ export default function Header() {
             <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white" asChild>
               <Link href="/quote">Get Quote</Link>
             </Button>
+            {isLoggedIn && (
+              <Button variant="ghost" onClick={handleLogout} className="text-foreground/80 hover:text-red-500">
+                Logout
+              </Button>
+            )}
           </div>
         </div>
       </header>
