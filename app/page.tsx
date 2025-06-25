@@ -4,10 +4,14 @@ import { Button } from "@/components/ui/button"
 import { ArrowRight, Building2, Hammer, HardHat, Layers, Ruler, Shield, Phone } from "lucide-react"
 import { useEffect, useState } from "react"
 import Head from 'next/head';
+import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [ctaPhone, setCtaPhone] = useState<string>("+15551234567");
+  const [heroImageUrl, setHeroImageUrl] = useState<string>('/placeholder.svg?height=400&width=600');
+  const [supabase] = useState(() => createSupabaseBrowserClient());
+
   useEffect(() => {
     const checkLogin = () => {
       setIsLoggedIn(typeof window !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true');
@@ -20,8 +24,28 @@ export default function Home() {
       if (stored) setCtaPhone(stored);
     }
 
+    const fetchHeroImage = async () => {
+      try {
+        const { data } = supabase.storage
+          .from('builderfiles')
+          .getPublicUrl('page_images/home-hero.jpg');
+        
+        if (data && data.publicUrl) {
+          // Check if the image exists before setting it
+          const res = await fetch(data.publicUrl);
+          if (res.ok) {
+            setHeroImageUrl(data.publicUrl);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching hero image:", error);
+      }
+    };
+
+    fetchHeroImage();
+
     return () => window.removeEventListener('storage', checkLogin);
-  }, []);
+  }, [supabase]);
 
   const handleLogout = () => {
     if (typeof window !== 'undefined') {
@@ -121,7 +145,7 @@ export default function Home() {
               <div className="relative h-[400px] w-full overflow-hidden rounded-2xl border border-border/40 p-2 backdrop-blur-sm" style={{ backgroundColor: '#141414' }}>
                 <div className="h-full w-full overflow-hidden rounded-xl bg-gradient-to-br from-blue-900/40 to-emerald-900/40">
                   <img
-                    src="/placeholder.svg?height=400&width=600"
+                    src={heroImageUrl}
                     alt="Modern construction project"
                     className="h-full w-full object-cover opacity-80"
                   />

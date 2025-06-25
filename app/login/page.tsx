@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 import { useRouter } from 'next/navigation';
-import { getSupabaseClient } from '@/lib/supabaseClient';
+import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' });
@@ -24,7 +24,7 @@ export default function LoginPage() {
       setError('Please enter both email and password.');
       return;
     }
-    const supabase = getSupabaseClient();
+    const supabase = createSupabaseBrowserClient();
     const { error } = await supabase.auth.signInWithPassword({
       email: form.email,
       password: form.password,

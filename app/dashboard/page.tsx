@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Briefcase, CreditCard, CheckCircle, AlertTriangle, User, PlusCircle, HelpCircle, Menu } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
 
 const mockUser = {
   name: 'Jane Doe',
@@ -80,9 +81,26 @@ export default function DashboardPage() {
   const selectedProject = activeProjects.find(p => p.name === selectedActive) || activeProjects[0];
   const [unreadCount, setUnreadCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userName, setUserName] = useState('User');
   const router = useRouter();
 
   useEffect(() => {
+    async function fetchUserName() {
+      const supabase = createSupabaseBrowserClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (userId) {
+        const { data, error } = await supabase
+          .from('users')
+          .select('name')
+          .eq('id', userId)
+          .single();
+        if (data && data.name) {
+          setUserName(data.name);
+        }
+      }
+    }
+    fetchUserName();
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('userMessages');
       if (stored) {
@@ -177,7 +195,7 @@ export default function DashboardPage() {
           {/* Welcome Card at the very top */}
           <div className="rounded-xl border border-border/40 bg-gradient-to-br from-blue-900/30 to-emerald-900/20 p-8 flex flex-col md:flex-row md:items-center md:justify-between mb-2">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Welcome back, {mockUser.name}!</h1>
+              <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Welcome back, {userName}!</h1>
               <p className="text-muted-foreground text-lg">Here's your latest project and payment activity.</p>
             </div>
           </div>

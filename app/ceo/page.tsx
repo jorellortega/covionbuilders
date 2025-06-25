@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import { Briefcase, User, CreditCard, PlusCircle, HelpCircle, Menu, BarChart2, Image, Users, DollarSign, Megaphone, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { createSupabaseBrowserClient } from "@/lib/supabaseClient"
+import { Card, CardContent } from "@/components/ui/card"
 
 const ceoLinks = [
   { label: 'Update Placeholder Images', href: '/updatepix', icon: <Image className="h-5 w-5" /> },
@@ -20,6 +22,8 @@ export default function CeoDashboardPage() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const router = useRouter();
+  const [messages, setMessages] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -31,6 +35,20 @@ export default function CeoDashboardPage() {
       }
     }
   }, []);
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      setLoading(true)
+      const supabase = createSupabaseBrowserClient()
+      const { data, error } = await supabase
+        .from('quote_requests')
+        .select('*')
+        .order('created_at', { ascending: false })
+      setMessages(data || [])
+      setLoading(false)
+    }
+    fetchMessages()
+  }, [])
 
   return (
     <div className="dark flex min-h-screen flex-col" style={{ backgroundColor: '#000000' }}>
@@ -167,6 +185,40 @@ export default function CeoDashboardPage() {
                 <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white font-semibold">Go to Communications</Button>
               </Link>
             </div>
+          </div>
+          <div className="mt-8">
+            <h2 className="text-3xl font-bold mb-4">Inbox: Contact & Quote Messages</h2>
+            {loading ? (
+              <div>Loading...</div>
+            ) : messages.length === 0 ? (
+              <div>No messages found.</div>
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {messages.map((msg) => (
+                  <Card key={msg.id} className="bg-background border-border/40">
+                    <CardContent className="p-4">
+                      <div className="mb-2 text-xs text-muted-foreground">{msg.created_at && new Date(msg.created_at).toLocaleString()}</div>
+                      <div className="font-semibold mb-1">{msg.first_name} {msg.last_name}</div>
+                      <div className="mb-1 text-sm">{msg.email} {msg.phone && <>| {msg.phone}</>}</div>
+                      <div className="mb-2 text-sm">
+                        <span className="font-medium">Type:</span> {msg.request_type || 'quote'}
+                      </div>
+                      <div className="mb-2 text-sm">
+                        <span className="font-medium">Message:</span> {msg.project_description || msg.additional_comments || <span className="italic text-muted-foreground">(No message)</span>}
+                      </div>
+                      {msg.reply && (
+                        <div className="mb-2 text-green-500 text-sm">
+                          <span className="font-medium">Reply:</span> {msg.reply}
+                        </div>
+                      )}
+                      <Button asChild className="w-full mt-2 bg-gradient-to-r from-blue-600 to-emerald-500 text-white">
+                        <Link href={`/reply/${msg.id}`}>View & Reply</Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         </main>
       </div>

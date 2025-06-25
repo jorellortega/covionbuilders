@@ -3,23 +3,30 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Building2 } from "lucide-react"
 import { useEffect, useState } from "react"
+import { createSupabaseBrowserClient } from "@/lib/supabaseClient"
+import { useRouter } from "next/navigation"
 
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
   useEffect(() => {
-    const checkLogin = () => {
-      setIsLoggedIn(typeof window !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true');
+    const supabase = createSupabaseBrowserClient();
+    supabase.auth.getSession().then(({ data }) => {
+      setIsLoggedIn(!!data?.session?.user);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session?.user);
+    });
+    return () => {
+      listener?.subscription.unsubscribe();
     };
-    checkLogin();
-    window.addEventListener('storage', checkLogin);
-    return () => window.removeEventListener('storage', checkLogin);
   }, []);
 
-  const handleLogout = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('isLoggedIn');
-      setIsLoggedIn(false);
-    }
+  const handleLogout = async () => {
+    const supabase = createSupabaseBrowserClient();
+    await supabase.auth.signOut();
+    setIsLoggedIn(false);
+    router.push("/");
   };
 
   return (
@@ -43,7 +50,7 @@ export default function Header() {
                 { name: "Careers", path: "/careers" },
                 { name: "Contact", path: "/contact" },
               ]
-                .concat(isLoggedIn ? [{ name: "Dashboard", path: "/dashboard" }] : [])
+                .concat(isLoggedIn ? [{ name: "Dashboard", path: "/dashboard" }] : [{ name: "Login", path: "/login" }])
                 .map((item) => (
                   <li key={item.name}>
                     <Link href={item.path} className="text-foreground/80 transition-colors hover:text-primary">

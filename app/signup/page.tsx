@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 import { useRouter } from 'next/navigation';
-import { getSupabaseClient } from '@/lib/supabaseClient';
+import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
 
 export default function SignupPage() {
   const [form, setForm] = useState({ name: '', email: '', password: '' });
@@ -23,11 +23,11 @@ export default function SignupPage() {
       setError('Please fill in all fields.');
       return;
     }
-    const supabase = getSupabaseClient();
+    const supabase = createSupabaseBrowserClient();
     const { error } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
-      options: { data: { name: form.name } }
+      options: { data: { display_name: form.name } }
     });
     if (error) {
       setError(error.message);

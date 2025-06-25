@@ -1,5 +1,6 @@
 "use client";
 import { useState } from 'react';
+import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,9 @@ export default function UpdatePixPage() {
   const [selectedPage, setSelectedPage] = useState(pages[0]);
   const [file, setFile] = useState<File | null>(null);
   const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [supabase] = useState(() => createSupabaseBrowserClient());
 
   function handlePageChange(e: React.ChangeEvent<HTMLSelectElement>) {
     setSelectedPage(e.target.value);
@@ -31,11 +35,54 @@ export default function UpdatePixPage() {
     }
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!file) return;
-    // Mock image update logic
-    setSuccess(true);
+
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const fileName = `${selectedPage.toLowerCase().replace(/ /g, '-')}-hero.jpg`;
+      const filePath = `page_images/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('builderfiles')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true, 
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { error: dbError } = await supabase
+        .from('files')
+        .upsert({
+          path: filePath,
+          bucket: 'builderfiles',
+          user_id: user?.id
+        }, {
+          onConflict: 'path'
+        });
+
+      if (dbError) {
+        if (dbError.message.includes('constraint matching the ON CONFLICT')) {
+          throw new Error("Database schema error: Please add a UNIQUE constraint to the 'path' column in your 'files' table.");
+        }
+        throw dbError;
+      }
+
+      setSuccess(true);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -52,6 +99,11 @@ export default function UpdatePixPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <div className="text-red-500 text-center p-2 bg-red-900/20 rounded-md">
+                  <p>Error: {error}</p>
+                </div>
+              )}
               <div>
                 <label htmlFor="page" className="block mb-2 text-white font-semibold">Select Page</label>
                 <select
@@ -76,9 +128,12 @@ export default function UpdatePixPage() {
                   className="w-full rounded-md border border-border/40 bg-black/30 p-2 text-white"
                   accept="image/*"
                   required
+                  disabled={loading}
                 />
               </div>
-              <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-emerald-500 text-white font-semibold">Update Image</Button>
+              <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-emerald-500 text-white font-semibold" disabled={loading}>
+                {loading ? 'Uploading...' : 'Update Image'}
+              </Button>
             </form>
           )}
         </div>
