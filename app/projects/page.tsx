@@ -4,85 +4,22 @@ import { ArrowRight, Calendar, MapPin } from "lucide-react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import Head from 'next/head'
+import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
 
-export default function ProjectsPage() {
-  const featuredProjects = [
-    {
-      title: "Azure Tower",
-      category: "Commercial",
-      location: "New York, NY",
-      year: "2023",
-      description:
-        "A 32-story commercial tower featuring state-of-the-art office spaces, retail areas, and sustainable design elements including solar panels and rainwater harvesting systems.",
-    },
-    {
-      title: "Emerald Heights",
-      category: "Residential",
-      location: "Seattle, WA",
-      year: "2022",
-      description:
-        "A luxury residential community with 120 units, featuring modern amenities, green spaces, and energy-efficient design that achieved LEED Gold certification.",
-    },
-    {
-      title: "Oceanic Research Center",
-      category: "Institutional",
-      location: "San Diego, CA",
-      year: "2023",
-      description:
-        "A cutting-edge marine research facility with laboratories, conference spaces, and specialized equipment for oceanographic studies.",
-    },
-  ]
+export default async function ProjectsPage() {
+  const supabase = createSupabaseBrowserClient();
+  const { data: projectsData, error } = await supabase
+    .from('projects')
+    .select('*')
+    .order('year', { ascending: false });
 
-  const projects = [
-    {
-      title: "Riverside Apartments",
-      category: "Residential",
-      location: "Portland, OR",
-      year: "2022",
-      description:
-        "A modern apartment complex with 85 units overlooking the river, featuring community spaces and sustainable design.",
-    },
-    {
-      title: "Tech Innovation Hub",
-      category: "Commercial",
-      location: "Austin, TX",
-      year: "2021",
-      description:
-        "A collaborative workspace designed for technology startups, featuring flexible office layouts and advanced connectivity.",
-    },
-    {
-      title: "Central Hospital Expansion",
-      category: "Healthcare",
-      location: "Chicago, IL",
-      year: "2023",
-      description:
-        "A 45,000 sq ft expansion of an existing hospital, adding new patient rooms, surgical suites, and diagnostic facilities.",
-    },
-    {
-      title: "Mountain View Resort",
-      category: "Hospitality",
-      location: "Denver, CO",
-      year: "2022",
-      description:
-        "A luxury mountain resort with 200 rooms, spa facilities, restaurants, and conference spaces designed to blend with the natural environment.",
-    },
-    {
-      title: "Sunset Plaza",
-      category: "Retail",
-      location: "Los Angeles, CA",
-      year: "2021",
-      description:
-        "An open-air shopping center featuring 30 retail spaces, dining options, and public gathering areas with sustainable landscaping.",
-    },
-    {
-      title: "Harbor Bridge",
-      category: "Infrastructure",
-      location: "Boston, MA",
-      year: "2023",
-      description:
-        "A 500-foot suspension bridge connecting two urban districts, designed for vehicle, bicycle, and pedestrian traffic.",
-    },
-  ]
+  if (error) {
+    return <div className="text-red-500">Error loading projects: {error.message}</div>;
+  }
+
+  // Example: first 3 as featured, rest as more projects
+  const featuredProjects = projectsData?.slice(0, 3) || [];
+  const projects = projectsData?.slice(3) || [];
 
   return (
     <>

@@ -32,12 +32,12 @@ export default function Footer() {
             <h3 className="mb-4 text-lg font-semibold">Services</h3>
             <ul className="space-y-2">
               {[
-                { name: "Commercial Construction", path: "/commercial-construction" },
-                { name: "Industrial Projects", path: "/industrial-projects" },
-                { name: "Residential Development", path: "/residential-development" },
+                { name: "Concrete", path: "/concrete" },
+                { name: "General Labor", path: "/general-labor" },
+                { name: "Painting", path: "/painting" },
                 { name: "Roofing", path: "/roofing" },
-                { name: "Renovation", path: "/renovation" },
-                { name: "Infrastructure", path: "/infrastructure" },
+                { name: "Remodeling", path: "/remodeling" },
+                { name: "Landscaping", path: "/landscaping" },
               ].map((item) => (
                 <li key={item.name}>
                   <Link href={item.path} className="text-muted-foreground transition-colors hover:text-primary">
@@ -55,7 +55,6 @@ export default function Footer() {
                 { name: "About Us", path: "/about" },
                 { name: "Projects", path: "/projects" },
                 { name: "Careers", path: "/careers" },
-                { name: "News", path: "/about" },
                 { name: "Contact", path: "/contact" },
                 { name: "Login", path: "/login" },
               ].map((item) => (

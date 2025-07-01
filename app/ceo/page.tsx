@@ -24,6 +24,8 @@ export default function CeoDashboardPage() {
   const router = useRouter();
   const [messages, setMessages] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [staffQuoteId, setStaffQuoteId] = useState('');
+  const [clientQuoteId, setClientQuoteId] = useState('');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -184,6 +186,29 @@ export default function CeoDashboardPage() {
               <Link href="/communications">
                 <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white font-semibold">Go to Communications</Button>
               </Link>
+            </div>
+            <div className="rounded-xl border border-border/40 bg-[#141414] p-6 shadow-lg">
+              <h2 className="mb-4 text-xl font-bold text-white">Edit Projects</h2>
+              <p className="mb-4 text-muted-foreground">Edit, update, or remove projects from the portfolio.</p>
+              <Link href="/projectsedit">
+                <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white font-semibold">Edit Projects</Button>
+              </Link>
+            </div>
+          </div>
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold mb-4">Quote Management</h2>
+            <div className="flex flex-wrap gap-4 items-center mb-4">
+              <Link href="/allquotes">
+                <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white font-semibold">Go to All Quotes Dashboard</Button>
+              </Link>
+              <form onSubmit={e => { e.preventDefault(); if (staffQuoteId) router.push(`/quotes/${staffQuoteId}`); }} className="flex gap-2 items-center">
+                <input type="text" placeholder="Quote ID" value={staffQuoteId || ''} onChange={e => setStaffQuoteId(e.target.value)} className="rounded-lg px-3 py-2 bg-[#232323] text-white border border-border/40" />
+                <Button type="submit" className="bg-blue-600 text-white font-semibold">View as Staff</Button>
+              </form>
+              <form onSubmit={e => { e.preventDefault(); if (clientQuoteId) router.push(`/viewquote/${clientQuoteId}`); }} className="flex gap-2 items-center">
+                <input type="text" placeholder="Quote ID" value={clientQuoteId || ''} onChange={e => setClientQuoteId(e.target.value)} className="rounded-lg px-3 py-2 bg-[#232323] text-white border border-border/40" />
+                <Button type="submit" className="bg-emerald-600 text-white font-semibold">View as Client</Button>
+              </form>
             </div>
           </div>
           <div className="mt-8">

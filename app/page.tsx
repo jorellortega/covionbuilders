@@ -5,6 +5,7 @@ import { ArrowRight, Building2, Hammer, HardHat, Layers, Ruler, Shield, Phone } 
 import { useEffect, useState } from "react"
 import Head from 'next/head';
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
+import { QuickQuoteForm } from "@/components/QuickQuoteForm"
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -165,6 +166,15 @@ export default function Home() {
           ></div>
         </section>
 
+        {/* Quick Quote Request Section */}
+        <section className="py-16 md:py-24">
+          <div className="container mx-auto max-w-[600px] text-center">
+            <h2 className="mb-4 text-3xl font-bold md:text-4xl">Quick Quote Request</h2>
+            <p className="mb-8 text-xl text-muted-foreground">Submit your contact info and we'll reach out to discuss your project. Want to provide more details? <a href="/quote" className="text-primary underline">Go to full quote form</a>.</p>
+            <QuickQuoteForm />
+          </div>
+        </section>
+
         {/* Services Section */}
         <section className="py-16 md:py-24">
           <div className="container">
@@ -189,8 +199,8 @@ export default function Home() {
                 },
                 {
                   icon: Hammer,
-                  title: "Residential Development",
-                  description: "Custom homes, multi-family units, and residential communities.",
+                  title: "Painting",
+                  description: "Interior and exterior painting for homes, offices, and commercial spaces.",
                 },
                 {
                   icon: Ruler,

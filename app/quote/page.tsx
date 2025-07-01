@@ -15,6 +15,7 @@ import Footer from "@/components/footer"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient"
 import { toast } from "sonner"
+import { useRouter, useSearchParams } from 'next/navigation';
 
 // Form validation schema
 const quoteFormSchema = z.object({
@@ -55,6 +56,8 @@ export default function QuotePage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
+  const [uploading, setUploading] = useState(false)
 
   const {
     register,
@@ -73,6 +76,9 @@ export default function QuotePage() {
 
   const selectedServices = watch("services")
 
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const expandDetails = searchParams?.get('expandDetails') === '1';
+
   // Detect signed-in user on mount
   useEffect(() => {
     const supabase = createSupabaseBrowserClient()
@@ -83,10 +89,22 @@ export default function QuotePage() {
 
   const onSubmit = async (data: QuoteFormData) => {
     setIsSubmitting(true)
-    
+    setUploading(true)
+    let fileUrls: string[] = [];
     try {
       const supabase = createSupabaseBrowserClient()
-      
+      if (uploadedFiles.length > 0) {
+        for (const file of uploadedFiles) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${data.firstName}-${data.lastName}-${Date.now()}-${file.name}`;
+          const path = `quote_files/${fileName}`;
+          const { error: uploadError } = await supabase.storage.from('builderfiles').upload(path, file, { upsert: true });
+          if (!uploadError) {
+            const { data: publicUrlData } = supabase.storage.from('builderfiles').getPublicUrl(path);
+            fileUrls.push(publicUrlData.publicUrl);
+          }
+        }
+      }
       const { error } = await supabase
         .from('quote_requests')
         .insert([
@@ -107,6 +125,7 @@ export default function QuotePage() {
             status: 'pending',
             created_at: new Date().toISOString(),
             user_id: userId,
+            files: fileUrls,
           }
         ])
 
@@ -119,11 +138,13 @@ export default function QuotePage() {
       toast.success("Quote request submitted successfully! We'll get back to you within 24 hours.")
       setIsSubmitted(true)
       reset()
+      setUploadedFiles([])
     } catch (error) {
       console.error('Error submitting quote:', error)
       toast.error("An unexpected error occurred. Please try again.")
     } finally {
       setIsSubmitting(false)
+      setUploading(false)
     }
   }
 
@@ -294,13 +315,29 @@ export default function QuotePage() {
                         placeholder="Please provide details about your project, including specific requirements, goals, and any challenges..."
                         rows={5}
                         {...register("projectDescription")}
+                        className="w-full rounded-lg border border-border/40 bg-black text-white p-2 min-h-[80px]"
                       />
+                      {errors.projectDescription && <div className="text-red-500 text-sm">{errors.projectDescription.message}</div>}
+                    </div>
+                    <div>
+                      <label className="block mb-1 font-medium">Upload Photos or Files (optional)</label>
+                      <input
+                        type="file"
+                        accept="image/*,.pdf,.doc,.docx"
+                        multiple
+                        onChange={e => setUploadedFiles(e.target.files ? Array.from(e.target.files) : [])}
+                        className="w-full rounded-lg border border-border/40 bg-black text-white p-2"
+                        disabled={uploading || isSubmitting}
+                      />
+                      {uploadedFiles.length > 0 && (
+                        <div className="text-xs text-muted-foreground mt-1">{uploadedFiles.length} file(s) selected</div>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 {/* Project Details, Services Needed, Additional Information as Accordion */}
-                <Accordion type="multiple" className="mt-8">
+                <Accordion type="multiple" className="mt-8" defaultValue={expandDetails ? ["project-details"] : undefined}>
                   <AccordionItem value="project-details">
                     <AccordionTrigger>Project Details</AccordionTrigger>
                     <AccordionContent>
