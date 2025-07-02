@@ -4,10 +4,12 @@ import Footer from '@/components/footer';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
-import { Briefcase, User, CreditCard, PlusCircle, HelpCircle, Menu, BarChart2, Image, Users, DollarSign, Megaphone, Mail } from 'lucide-react';
+import { Briefcase, User, CreditCard, PlusCircle, HelpCircle, Menu, BarChart2, Image, Users, DollarSign, Megaphone, Mail, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient"
 import { Card, CardContent } from "@/components/ui/card"
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 const ceoLinks = [
   { label: 'Update Placeholder Images', href: '/updatepix', icon: <Image className="h-5 w-5" /> },
@@ -22,10 +24,16 @@ export default function CeoDashboardPage() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const router = useRouter();
-  const [messages, setMessages] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [messages, setMessages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [replying, setReplying] = useState<{ [id: string]: string }>({});
+  const [saving, setSaving] = useState<{ [id: string]: boolean }>({});
+  const [error, setError] = useState('');
   const [staffQuoteId, setStaffQuoteId] = useState('');
   const [clientQuoteId, setClientQuoteId] = useState('');
+  const [replies, setReplies] = useState<{ [messageId: string]: any[] }>({});
+  const [newQuotesCount, setNewQuotesCount] = useState(0);
+  const [recentQuotes, setRecentQuotes] = useState<any[]>([]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -39,18 +47,84 @@ export default function CeoDashboardPage() {
   }, []);
 
   useEffect(() => {
-    const fetchMessages = async () => {
-      setLoading(true)
-      const supabase = createSupabaseBrowserClient()
-      const { data, error } = await supabase
+    const fetchMessagesAndReplies = async () => {
+      setLoading(true);
+      const supabase = createSupabaseBrowserClient();
+      // Fetch messages with user info
+      const { data: messagesData, error: msgError } = await supabase
+        .from('messages')
+        .select('*, users(name, email)')
+        .order('created_at', { ascending: false });
+      if (msgError) setError('Failed to load messages.');
+      setMessages(messagesData || []);
+      // Fetch all replies
+      const { data: repliesData, error: repError } = await supabase
+        .from('message_replies')
+        .select('*, users(name, email)')
+        .order('created_at', { ascending: true });
+      if (!repError && repliesData) {
+        // Group replies by message_id
+        const grouped: { [messageId: string]: any[] } = {};
+        for (const rep of repliesData) {
+          if (!grouped[rep.message_id]) grouped[rep.message_id] = [];
+          grouped[rep.message_id].push(rep);
+        }
+        setReplies(grouped);
+      }
+      setLoading(false);
+    };
+    fetchMessagesAndReplies();
+  }, []);
+
+  useEffect(() => {
+    // Fetch count of new (pending) quotes
+    const fetchNewQuotes = async () => {
+      const supabase = createSupabaseBrowserClient();
+      const { count } = await supabase
         .from('quote_requests')
-        .select('*')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending');
+      setNewQuotesCount(count || 0);
+    };
+    fetchNewQuotes();
+  }, []);
+
+  useEffect(() => {
+    // Fetch last 3 quotes (any status)
+    const fetchRecentQuotes = async () => {
+      const supabase = createSupabaseBrowserClient();
+      const { data } = await supabase
+        .from('quote_requests')
+        .select('id, created_at, project_id, user_id, status, project_type, budget')
         .order('created_at', { ascending: false })
-      setMessages(data || [])
-      setLoading(false)
-    }
-    fetchMessages()
-  }, [])
+        .limit(3);
+      setRecentQuotes(data || []);
+    };
+    fetchRecentQuotes();
+  }, []);
+
+  const handleReplyChange = (id: string, value: string) => {
+    setReplying(r => ({ ...r, [id]: value }));
+  };
+
+  const handleReplySave = async (id: string) => {
+    setSaving(s => ({ ...s, [id]: true }));
+    setError('');
+    const supabase = createSupabaseBrowserClient();
+    const reply = replying[id];
+    const { error, data } = await supabase
+      .from('message_replies')
+      .insert({ message_id: id, body: reply })
+      .select('*, users(name, email)')
+      .single();
+    if (error) setError('Failed to save reply.');
+    setReplies(r => ({
+      ...r,
+      [id]: [...(r[id] || []), data],
+    }));
+    setSaving(s => ({ ...s, [id]: false }));
+    setReplying(r => ({ ...r, [id]: '' }));
+  };
 
   return (
     <div className="dark flex min-h-screen flex-col" style={{ backgroundColor: '#000000' }}>
@@ -115,6 +189,39 @@ export default function CeoDashboardPage() {
         {/* Main Content */}
         <main className="flex-1 p-8 overflow-y-auto">
           <h1 className="mb-8 text-4xl font-bold text-white text-center">CEO Dashboard</h1>
+          {/* New Quotes Alert */}
+          {newQuotesCount > 0 && (
+            <div className="mb-8 p-4 bg-[#181c20] border-l-4 border-blue-500 rounded-xl flex flex-col gap-3 shadow">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="text-blue-400 h-6 w-6" />
+                  <span className="text-white font-semibold">{newQuotesCount} new quote request{newQuotesCount > 1 ? 's' : ''} submitted!</span>
+                </div>
+                <a
+                  href="/allquotes"
+                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-emerald-500 text-white rounded font-semibold shadow hover:from-blue-700 hover:to-emerald-600 transition-colors"
+                >
+                  View Quotes
+                </a>
+              </div>
+              {/* Compact list of last 3 quotes */}
+              <div className="mt-2">
+                <div className="text-xs text-blue-300 font-semibold mb-1">Recent Submissions:</div>
+                <ul className="space-y-1">
+                  {recentQuotes.map(q => (
+                    <li key={q.id} className="flex items-center justify-between bg-[#23272e] rounded px-2 py-1 gap-2">
+                      <a href={`/quotes/${q.id}`} className="text-blue-400 hover:underline text-sm font-medium truncate max-w-[120px]">
+                        {q.project_type || 'No Project'}
+                      </a>
+                      <span className="text-xs text-gray-300 truncate max-w-[80px]">{q.user_id}</span>
+                      <span className="text-xs text-gray-400">{q.created_at && new Date(q.created_at).toLocaleString()}</span>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded ${q.status === 'pending' ? 'bg-yellow-600 text-white' : q.status === 'approved' ? 'bg-emerald-700 text-white' : 'bg-gray-700 text-gray-200'}`}>{q.status}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
           <div className="mb-8 grid gap-6 md:grid-cols-3">
             <div className="rounded-xl border border-border/40 bg-[#141414] p-6 shadow-lg text-center">
               <h2 className="text-2xl font-bold text-white">Total Projects</h2>
@@ -139,7 +246,7 @@ export default function CeoDashboardPage() {
                   {unreadCount > 0 ? `You have ${unreadCount} new message${unreadCount > 1 ? 's' : ''}.` : 'Send and view your messages and replies.'}
                 </div>
               </div>
-              <Link href="/messages" className="mt-4">
+              <Link href="/messages/ceo" className="mt-4">
                 <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white font-semibold px-8 py-3 text-lg shadow w-full">View Messages</Button>
               </Link>
             </div>
@@ -219,7 +326,7 @@ export default function CeoDashboardPage() {
             </div>
           </div>
           <div className="mt-8">
-            <h2 className="text-3xl font-bold mb-4">Inbox: Contact & Quote Messages</h2>
+            <h2 className="text-3xl font-bold mb-4">Inbox: User Messages</h2>
             {loading ? (
               <div>Loading...</div>
             ) : messages.length === 0 ? (
@@ -230,27 +337,50 @@ export default function CeoDashboardPage() {
                   <Card key={msg.id} className="bg-background border-border/40">
                     <CardContent className="p-4">
                       <div className="mb-2 text-xs text-muted-foreground">{msg.created_at && new Date(msg.created_at).toLocaleString()}</div>
-                      <div className="font-semibold mb-1">{msg.first_name} {msg.last_name}</div>
-                      <div className="mb-1 text-sm">{msg.email} {msg.phone && <>| {msg.phone}</>}</div>
+                      <div className="font-semibold mb-1">{msg.users?.name || 'Unknown User'}</div>
+                      <div className="mb-1 text-sm">{msg.users?.email}</div>
                       <div className="mb-2 text-sm">
-                        <span className="font-medium">Type:</span> {msg.request_type || 'quote'}
+                        <span className="font-medium">Subject:</span> {msg.subject}
                       </div>
                       <div className="mb-2 text-sm">
-                        <span className="font-medium">Message:</span> {msg.project_description || msg.additional_comments || <span className="italic text-muted-foreground">(No message)</span>}
+                        <span className="font-medium">Message:</span> {msg.body}
                       </div>
-                      {msg.reply && (
-                        <div className="mb-2 text-green-500 text-sm">
-                          <span className="font-medium">Reply:</span> {msg.reply}
+                      {/* Show all replies for this message */}
+                      {replies[msg.id] && replies[msg.id].length > 0 && (
+                        <div className="mb-2">
+                          <div className="font-bold text-green-400 mb-1">Replies:</div>
+                          <div className="space-y-2">
+                            {replies[msg.id].map((rep: any) => (
+                              <div key={rep.id} className="p-2 bg-green-900/30 border-l-4 border-green-400 rounded">
+                                <div className="text-xs text-green-200 mb-1">{rep.users?.name || 'Admin'} • {new Date(rep.created_at).toLocaleString()}</div>
+                                <div className="text-white">{rep.body}</div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
-                      <Button asChild className="w-full mt-2 bg-gradient-to-r from-blue-600 to-emerald-500 text-white">
-                        <Link href={`/reply/${msg.id}`}>View & Reply</Link>
-                      </Button>
+                      <div className="mt-2">
+                        <Textarea
+                          placeholder="Write a reply..."
+                          value={replying[msg.id] ?? ''}
+                          onChange={e => handleReplyChange(msg.id, e.target.value)}
+                          className="mb-2 text-white"
+                          rows={2}
+                        />
+                        <Button
+                          className="w-full bg-gradient-to-r from-blue-600 to-emerald-500 text-white"
+                          onClick={() => handleReplySave(msg.id)}
+                          disabled={saving[msg.id] || !replying[msg.id]}
+                        >
+                          {saving[msg.id] ? 'Saving...' : 'Send Reply'}
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
             )}
+            {error && <div className="text-red-500 mt-2">{error}</div>}
           </div>
         </main>
       </div>

@@ -103,9 +103,9 @@ export default async function ProjectsPage() {
                     <p className="mb-6 text-muted-foreground">{project.description}</p>
                     <div>
                       <Link href={`/projects/${project.id}`}>
-                        <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white">
-                          View Project Details <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
+                      <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white">
+                        View Project Details <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
                       </Link>
                     </div>
                   </div>

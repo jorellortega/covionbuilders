@@ -8,14 +8,35 @@ import { useRouter } from "next/navigation"
 
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [dashboardHref, setDashboardHref] = useState("/dashboard");
   const router = useRouter();
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       setIsLoggedIn(!!data?.session?.user);
+      if (data?.session?.user) {
+        // Check role
+        const { data: userData } = await supabase.from('users').select('role').eq('id', data.session.user.id).single();
+        if (userData?.role === 'ceo') {
+          setDashboardHref("/ceo");
+        } else {
+          setDashboardHref("/dashboard");
+        }
+      }
     });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsLoggedIn(!!session?.user);
+      if (session?.user) {
+        supabase.from('users').select('role').eq('id', session.user.id).single().then(({ data: userData }) => {
+          if (userData?.role === 'ceo') {
+            setDashboardHref("/ceo");
+          } else {
+            setDashboardHref("/dashboard");
+          }
+        });
+      } else {
+        setDashboardHref("/dashboard");
+      }
     });
     return () => {
       listener?.subscription.unsubscribe();
@@ -50,7 +71,7 @@ export default function Header() {
                 { name: "Careers", path: "/careers" },
                 { name: "Contact", path: "/contact" },
               ]
-                .concat(isLoggedIn ? [{ name: "Dashboard", path: "/dashboard" }] : [{ name: "Login", path: "/login" }])
+                .concat(isLoggedIn ? [{ name: "Dashboard", path: dashboardHref }] : [{ name: "Login", path: "/login" }])
                 .map((item) => (
                   <li key={item.name}>
                     <Link href={item.path} className="text-foreground/80 transition-colors hover:text-primary">

@@ -71,50 +71,50 @@ export default function ServicesPage() {
           {loading ? (
             <div className="text-center text-muted-foreground">Loading services...</div>
           ) : (
-            <div className="grid gap-12">
+          <div className="grid gap-12">
               {filteredServices.map((service, index) => {
                 const Icon = ICONS[service.icon as string] || ICONS.Building2;
                 return (
-                  <div
+              <div
                     key={service.id}
-                    className={`grid gap-8 rounded-xl border border-border/40 bg-card/30 p-8 md:grid-cols-2 ${index % 2 === 1 ? "md:grid-flow-dense" : ""}`}
-                  >
-                    <div className={`flex flex-col justify-center ${index % 2 === 1 ? "md:col-start-2" : ""}`}>
-                      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600/20 to-emerald-600/20 text-primary">
+                className={`grid gap-8 rounded-xl border border-border/40 bg-card/30 p-8 md:grid-cols-2 ${index % 2 === 1 ? "md:grid-flow-dense" : ""}`}
+              >
+                <div className={`flex flex-col justify-center ${index % 2 === 1 ? "md:col-start-2" : ""}`}>
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600/20 to-emerald-600/20 text-primary">
                         <Icon className="h-8 w-8" />
-                      </div>
-                      <h2 className="mb-4 text-3xl font-bold">{service.title}</h2>
-                      <p className="mb-6 text-muted-foreground">{service.description}</p>
-                      {service.features && Array.isArray(service.features) && (
-                        <div className="mb-6">
-                          <h3 className="mb-3 text-lg font-medium">Key Features:</h3>
-                          <ul className="grid gap-2 sm:grid-cols-2">
-                            {service.features.map((feature: string, i: number) => (
-                              <li key={i} className="flex items-center gap-2">
-                                <div className="h-1.5 w-1.5 rounded-full bg-primary"></div>
-                                <span>{feature}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      <div>
-                        <Link href={`/service/${service.id}`}>
-                          <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white">
-                            Request a Quote <ArrowRight className="ml-2 h-4 w-4" />
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                    <div className="relative flex items-center justify-center overflow-hidden rounded-lg">
-                      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-emerald-600/10 backdrop-blur-[2px]"></div>
-                      <img
-                        src={`/placeholder.svg?height=400&width=600&text=${encodeURIComponent(service.title)}`}
-                        alt={service.title}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
                   </div>
+                  <h2 className="mb-4 text-3xl font-bold">{service.title}</h2>
+                  <p className="mb-6 text-muted-foreground">{service.description}</p>
+                      {service.features && Array.isArray(service.features) && (
+                  <div className="mb-6">
+                    <h3 className="mb-3 text-lg font-medium">Key Features:</h3>
+                    <ul className="grid gap-2 sm:grid-cols-2">
+                            {service.features.map((feature: string, i: number) => (
+                        <li key={i} className="flex items-center gap-2">
+                          <div className="h-1.5 w-1.5 rounded-full bg-primary"></div>
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                      )}
+                  <div>
+                        <Link href={`/service/${service.id}`}>
+                    <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white">
+                      Request a Quote <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                        </Link>
+                  </div>
+                </div>
+                <div className="relative flex items-center justify-center overflow-hidden rounded-lg">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-emerald-600/10 backdrop-blur-[2px]"></div>
+                  <img
+                        src={`/placeholder.svg?height=400&width=600&text=${encodeURIComponent(service.title)}`}
+                    alt={service.title}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              </div>
                 );
               })}
               {filteredServices.length === 0 && (

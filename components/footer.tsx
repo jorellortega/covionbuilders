@@ -1,7 +1,32 @@
+"use client";
 import Link from "next/link"
 import { Building2 } from "lucide-react"
+import { useEffect, useState } from "react";
+import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 
 export default function Footer() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    supabase.auth.getSession().then(({ data }) => {
+      setIsLoggedIn(!!data?.session?.user);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session?.user);
+    });
+    return () => {
+      listener?.subscription.unsubscribe();
+    };
+  }, []);
+
+  const companyLinks = [
+    { name: "About Us", path: "/about" },
+    { name: "Projects", path: "/projects" },
+    { name: "Careers", path: "/careers" },
+    { name: "Contact", path: "/contact" },
+    { name: "Login", path: "/login", hideWhenLoggedIn: true },
+  ];
+
   return (
     <footer className="border-t border-border/40 bg-card/30 py-12 md:py-16">
       <div className="container">
@@ -51,19 +76,15 @@ export default function Footer() {
           <div>
             <h3 className="mb-4 text-lg font-semibold">Company</h3>
             <ul className="space-y-2">
-              {[
-                { name: "About Us", path: "/about" },
-                { name: "Projects", path: "/projects" },
-                { name: "Careers", path: "/careers" },
-                { name: "Contact", path: "/contact" },
-                { name: "Login", path: "/login" },
-              ].map((item) => (
-                <li key={item.name}>
-                  <Link href={item.path} className="text-muted-foreground transition-colors hover:text-primary">
-                    {item.name}
-                  </Link>
-                </li>
-              ))}
+              {companyLinks
+                .filter(item => !(item.hideWhenLoggedIn && isLoggedIn))
+                .map((item) => (
+                  <li key={item.name}>
+                    <Link href={item.path} className="text-muted-foreground transition-colors hover:text-primary">
+                      {item.name}
+                    </Link>
+                  </li>
+                ))}
             </ul>
           </div>
 
@@ -81,12 +102,14 @@ export default function Footer() {
         <div className="mt-12 border-t border-border/40 pt-6 text-center text-sm text-muted-foreground">
           <div className="flex flex-col items-center gap-2">
             <p>© {new Date().getFullYear()} Covion Builders. All rights reserved. <span className="text-xs text-muted-foreground">Developed by JOR.</span></p>
-            <a
-              href="/login"
-              className="inline-block rounded-md bg-gradient-to-r from-blue-600 to-emerald-500 px-4 py-2 text-white font-semibold shadow hover:from-blue-700 hover:to-emerald-600 transition-colors mt-2"
-            >
-              Login / Signup
-            </a>
+            {!isLoggedIn && (
+              <a
+                href="/login"
+                className="inline-block rounded-md bg-gradient-to-r from-blue-600 to-emerald-500 px-4 py-2 text-white font-semibold shadow hover:from-blue-700 hover:to-emerald-600 transition-colors mt-2"
+              >
+                Login / Signup
+              </a>
+            )}
           </div>
         </div>
       </div>

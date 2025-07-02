@@ -1,23 +1,30 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 import { Button } from '@/components/ui/button';
-
-const mockProjects = [
-  { id: 1, name: 'Riverside Apartments', status: 'Active', budget: 100000, manager: 'John Doe' },
-  { id: 2, name: 'Tech Innovation Hub', status: 'Completed', budget: 200000, manager: 'Jane Smith' },
-  { id: 3, name: 'Sunset Plaza', status: 'Active', budget: 150000, manager: 'Bob Johnson' },
-];
+import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
 
 export default function ManageProjectsPage() {
-  const [projects, setProjects] = useState(mockProjects);
+  const [projects, setProjects] = useState<any[]>([]);
 
-  function handleDelete(id: number) {
+  useEffect(() => {
+    const fetchProjects = async () => {
+      const supabase = createSupabaseBrowserClient();
+      const { data } = await supabase
+        .from('quote_requests')
+        .select('*')
+        .order('created_at', { ascending: false });
+      setProjects(data || []);
+    };
+    fetchProjects();
+  }, []);
+
+  function handleDelete(id: string) {
     setProjects(projects.filter(project => project.id !== id));
   }
 
-  function handleArchive(id: number) {
+  function handleArchive(id: string) {
     setProjects(projects.map(project => project.id === id ? { ...project, status: 'Archived' } : project));
   }
 
@@ -31,13 +38,16 @@ export default function ManageProjectsPage() {
             {projects.map((project) => (
               <div key={project.id} className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border border-border/40 rounded-md bg-black/30">
                 <div className="mb-2 md:mb-0">
-                  <h2 className="text-xl font-bold text-white">{project.name}</h2>
-                  <p className="text-muted-foreground">Status: {project.status} | Budget: ${project.budget} | Manager: {project.manager}</p>
+                  <h2 className="text-xl font-bold text-white">{project.project_type || project.name || 'No Name'}</h2>
+                  <p className="text-muted-foreground">Status: {project.status} | Budget: ${project.budget} | Manager: {project.manager || project.first_name + ' ' + project.last_name}</p>
                 </div>
                 <div className="space-x-2 flex">
                   <Button className="bg-blue-600 text-white">Edit</Button>
                   <Button onClick={() => handleArchive(project.id)} className="bg-yellow-600 text-white">Archive</Button>
                   <Button onClick={() => handleDelete(project.id)} className="bg-red-600 text-white">Delete</Button>
+                  <a href={`/status/${project.id}`} target="_blank" rel="noopener noreferrer">
+                    <Button className="bg-emerald-600 text-white">View Status</Button>
+                  </a>
                 </div>
               </div>
             ))}

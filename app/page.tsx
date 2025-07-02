@@ -276,32 +276,32 @@ export default function Home() {
                 <div className="col-span-full text-center text-muted-foreground">No featured projects found.</div>
               ) : (
                 featuredProjects.map((project, index) => (
-                  <div
+                <div
                     key={project.id}
-                    className="group overflow-hidden rounded-xl border border-border/40 transition-all hover:border-primary/40"
-                    style={{ backgroundColor: '#141414' }}
-                  >
-                    <div className="aspect-video overflow-hidden">
-                      <img
+                  className="group overflow-hidden rounded-xl border border-border/40 transition-all hover:border-primary/40"
+                  style={{ backgroundColor: '#141414' }}
+                >
+                  <div className="aspect-video overflow-hidden">
+                    <img
                         src={project.image_url || `/placeholder.svg?height=300&width=500&text=${encodeURIComponent(project.title)}`}
-                        alt={project.title}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
+                      alt={project.title}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  </div>
+                  <div className="p-6">
+                    <div className="mb-2 flex items-center gap-2">
+                      <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                        {project.category}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{project.location}</span>
                     </div>
-                    <div className="p-6">
-                      <div className="mb-2 flex items-center gap-2">
-                        <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                          {project.category}
-                        </span>
-                        <span className="text-xs text-muted-foreground">{project.location}</span>
-                      </div>
-                      <h3 className="mb-2 text-xl font-semibold">{project.title}</h3>
+                    <h3 className="mb-2 text-xl font-semibold">{project.title}</h3>
                       <p className="mb-2 text-muted-foreground line-clamp-2">{project.description}</p>
                       <Link href={`/projects/${project.id}`} className="inline-flex items-center text-sm font-medium text-primary">
-                        View Project <ArrowRight className="ml-1 h-4 w-4" />
-                      </Link>
-                    </div>
+                      View Project <ArrowRight className="ml-1 h-4 w-4" />
+                    </Link>
                   </div>
+                </div>
                 ))
               )}
             </div>
