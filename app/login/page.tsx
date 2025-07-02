@@ -33,6 +33,15 @@ export default function LoginPage() {
       setError(error.message);
       return;
     }
+    // Fetch user role
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data } = await supabase.from('users').select('role').eq('id', user.id).single();
+      if (data?.role === 'ceo') {
+        router.push('/ceo');
+        return;
+      }
+    }
     router.push('/dashboard');
   }
 

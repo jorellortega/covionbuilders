@@ -8,18 +8,22 @@ import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
 
 export default async function ProjectsPage() {
   const supabase = createSupabaseBrowserClient();
-  const { data: projectsData, error } = await supabase
+  // Fetch featured projects
+  const { data: featuredProjects, error: featuredError } = await supabase
     .from('projects')
     .select('*')
+    .eq('is_featured', true)
+    .limit(3);
+  // Fetch non-featured projects
+  const { data: projects, error: projectsError } = await supabase
+    .from('projects')
+    .select('*')
+    .eq('is_featured', false)
     .order('year', { ascending: false });
 
-  if (error) {
-    return <div className="text-red-500">Error loading projects: {error.message}</div>;
+  if (featuredError || projectsError) {
+    return <div className="text-red-500">Error loading projects: {(featuredError || projectsError)?.message}</div>;
   }
-
-  // Example: first 3 as featured, rest as more projects
-  const featuredProjects = projectsData?.slice(0, 3) || [];
-  const projects = projectsData?.slice(3) || [];
 
   return (
     <>
@@ -73,9 +77,9 @@ export default async function ProjectsPage() {
             <h2 className="mb-12 text-3xl font-bold">Featured Projects</h2>
 
             <div className="grid gap-12">
-              {featuredProjects.map((project, index) => (
+              {featuredProjects && featuredProjects.length > 0 ? featuredProjects.map((project, index) => (
                 <div
-                  key={index}
+                  key={project.id}
                   className={`grid gap-8 rounded-xl border border-border/40 p-8 md:grid-cols-2 ${index % 2 === 1 ? "md:grid-flow-dense" : ""}`}
                   style={{ backgroundColor: '#141414' }}
                 >
@@ -98,23 +102,25 @@ export default async function ProjectsPage() {
                     </div>
                     <p className="mb-6 text-muted-foreground">{project.description}</p>
                     <div>
-                      <Link href={`/projects/${project.title.toLowerCase().replace(/\s+/g, '-')}`}>
-                      <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white">
-                        View Project Details <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
+                      <Link href={`/projects/${project.id}`}>
+                        <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white">
+                          View Project Details <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
                       </Link>
                     </div>
                   </div>
                   <div className="relative flex items-center justify-center overflow-hidden rounded-lg">
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-emerald-600/10 backdrop-blur-[2px]"></div>
                     <img
-                      src={`/placeholder.svg?height=400&width=600&text=${project.title.replace(/\s/g, "+")}`}
+                      src={project.image_url || `/placeholder.svg?height=400&width=600&text=${encodeURIComponent(project.title)}`}
                       alt={project.title}
                       className="h-full w-full object-cover"
                     />
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="col-span-full text-center text-muted-foreground">No featured projects found.</div>
+              )}
             </div>
           </div>
         </section>
@@ -125,15 +131,15 @@ export default async function ProjectsPage() {
             <h2 className="mb-12 text-3xl font-bold">More Projects</h2>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {projects.map((project, index) => (
+              {projects && projects.length > 0 ? projects.map((project, index) => (
                 <div
-                  key={index}
+                  key={project.id}
                   className="group overflow-hidden rounded-xl border border-border/40 transition-all hover:border-primary/40"
                   style={{ backgroundColor: '#141414' }}
                 >
                   <div className="aspect-video overflow-hidden">
                     <img
-                      src={`/placeholder.svg?height=300&width=500&text=${project.title.replace(/\s/g, "+")}`}
+                      src={project.image_url || `/placeholder.svg?height=300&width=500&text=${encodeURIComponent(project.title)}`}
                       alt={project.title}
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
@@ -147,12 +153,14 @@ export default async function ProjectsPage() {
                     </div>
                     <h3 className="mb-2 text-xl font-semibold">{project.title}</h3>
                     <p className="mb-4 text-sm text-muted-foreground line-clamp-2">{project.description}</p>
-                    <Link href={`/projects/${project.title.toLowerCase().replace(/\s+/g, '-')}`} className="inline-flex items-center text-sm font-medium text-primary">
+                    <Link href={`/projects/${project.id}`} className="inline-flex items-center text-sm font-medium text-primary">
                       View Project <ArrowRight className="ml-1 h-4 w-4" />
                     </Link>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="col-span-full text-center text-muted-foreground">No projects found.</div>
+              )}
             </div>
           </div>
         </section>

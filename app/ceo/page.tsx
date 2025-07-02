@@ -194,6 +194,13 @@ export default function CeoDashboardPage() {
                 <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white font-semibold">Edit Projects</Button>
               </Link>
             </div>
+            <div className="rounded-xl border border-border/40 bg-[#141414] p-6 shadow-lg">
+              <h2 className="mb-4 text-xl font-bold text-white">Manage Services</h2>
+              <p className="mb-4 text-muted-foreground">Add, edit, or remove construction services.</p>
+              <Link href="/servicesedit">
+                <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white font-semibold">Manage Services</Button>
+              </Link>
+            </div>
           </div>
           <div className="mb-8">
             <h2 className="text-3xl font-bold mb-4">Quote Management</h2>

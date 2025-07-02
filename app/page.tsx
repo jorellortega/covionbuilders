@@ -12,6 +12,7 @@ export default function Home() {
   const [ctaPhone, setCtaPhone] = useState<string>("+15551234567");
   const [heroImageUrl, setHeroImageUrl] = useState<string>('/placeholder.svg?height=400&width=600');
   const [supabase] = useState(() => createSupabaseBrowserClient());
+  const [featuredProjects, setFeaturedProjects] = useState<any[]>([]);
 
   useEffect(() => {
     const checkLogin = () => {
@@ -44,6 +45,21 @@ export default function Home() {
     };
 
     fetchHeroImage();
+
+    // Fetch featured projects
+    const fetchFeaturedProjects = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('is_featured', true)
+          .limit(3);
+        if (!error && data) setFeaturedProjects(data);
+      } catch (err) {
+        // Optionally handle error
+      }
+    };
+    fetchFeaturedProjects();
 
     return () => window.removeEventListener('storage', checkLogin);
   }, [supabase]);
@@ -81,12 +97,12 @@ export default function Home() {
 
             <nav className="hidden md:flex">
               <ul className="flex space-x-8">
-                {["Services", "Projects", "About", "Careers"]
-                  .concat(isLoggedIn ? ["Dashboard"] : [])
+                {[{ name: "Services", path: "/services" }, { name: "Projects", path: "/projects" }, { name: "About", path: "/about" }, { name: "Careers", path: "/careers" }]
+                  .concat(isLoggedIn ? [{ name: "Dashboard", path: "/dashboard" }] : [{ name: "Login", path: "/login" }])
                   .map((item) => (
-                    <li key={item}>
-                      <Link href={item === "Dashboard" ? "/dashboard" : "#"} className="text-foreground/80 transition-colors hover:text-primary">
-                        {item}
+                    <li key={item.name}>
+                      <Link href={item.path} className="text-foreground/80 transition-colors hover:text-primary">
+                        {item.name}
                       </Link>
                     </li>
                   ))}
@@ -256,49 +272,38 @@ export default function Home() {
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {[
-                {
-                  title: "Azure Tower",
-                  category: "Commercial",
-                  location: "New York, NY",
-                },
-                {
-                  title: "Emerald Heights",
-                  category: "Residential",
-                  location: "Seattle, WA",
-                },
-                {
-                  title: "Oceanic Research Center",
-                  category: "Institutional",
-                  location: "San Diego, CA",
-                },
-              ].map((project, index) => (
-                <div
-                  key={index}
-                  className="group overflow-hidden rounded-xl border border-border/40 transition-all hover:border-primary/40"
-                  style={{ backgroundColor: '#141414' }}
-                >
-                  <div className="aspect-video overflow-hidden">
-                    <img
-                      src={`/placeholder.svg?height=300&width=500&text=Project+${index + 1}`}
-                      alt={project.title}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  </div>
-                  <div className="p-6">
-                    <div className="mb-2 flex items-center gap-2">
-                      <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                        {project.category}
-                      </span>
-                      <span className="text-xs text-muted-foreground">{project.location}</span>
+              {featuredProjects.length === 0 ? (
+                <div className="col-span-full text-center text-muted-foreground">No featured projects found.</div>
+              ) : (
+                featuredProjects.map((project, index) => (
+                  <div
+                    key={project.id}
+                    className="group overflow-hidden rounded-xl border border-border/40 transition-all hover:border-primary/40"
+                    style={{ backgroundColor: '#141414' }}
+                  >
+                    <div className="aspect-video overflow-hidden">
+                      <img
+                        src={project.image_url || `/placeholder.svg?height=300&width=500&text=${encodeURIComponent(project.title)}`}
+                        alt={project.title}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
                     </div>
-                    <h3 className="mb-2 text-xl font-semibold">{project.title}</h3>
-                    <Link href="/projects" className="inline-flex items-center text-sm font-medium text-primary">
-                      View Project <ArrowRight className="ml-1 h-4 w-4" />
-                    </Link>
+                    <div className="p-6">
+                      <div className="mb-2 flex items-center gap-2">
+                        <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                          {project.category}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{project.location}</span>
+                      </div>
+                      <h3 className="mb-2 text-xl font-semibold">{project.title}</h3>
+                      <p className="mb-2 text-muted-foreground line-clamp-2">{project.description}</p>
+                      <Link href={`/projects/${project.id}`} className="inline-flex items-center text-sm font-medium text-primary">
+                        View Project <ArrowRight className="ml-1 h-4 w-4" />
+                      </Link>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </section>
