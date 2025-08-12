@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
+import { Button } from '@/components/ui/button';
+import { Send, MessageSquare, Reply, Clock, User } from 'lucide-react';
 
 interface UserMessage {
   id: string;
@@ -114,71 +116,159 @@ export default function MessagesPage() {
   return (
     <div className="dark flex min-h-screen flex-col" style={{ backgroundColor: '#000000' }}>
       <Header />
-      <main className="flex-1 container py-16 max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4 text-white">Send a Message</h1>
-        <div className="mb-6 p-4 border rounded bg-white">
-          <input
-            type="text"
-            placeholder="Subject"
-            value={subject}
-            onChange={e => setSubject(e.target.value)}
-            className="border p-2 mb-2 w-full text-black"
-          />
-          <textarea
-            placeholder="Message"
-            value={body}
-            onChange={e => setBody(e.target.value)}
-            className="border p-2 mb-2 w-full text-black"
-            rows={5}
-          />
-          <button onClick={sendMessage} className="bg-blue-500 text-white p-2 rounded w-full">Send</button>
-          {error && <div className="text-red-500 mt-2">{error}</div>}
+      <main className="flex-1 container py-16 max-w-4xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-2 text-white">Messages</h1>
+          <p className="text-muted-foreground">Stay connected with our team and track your conversations</p>
         </div>
-        <h2 className="text-xl font-bold mb-2 text-white">Your Sent Messages</h2>
-        {loading ? (
-          <div className="text-gray-400">Loading...</div>
-        ) : (
-          <ul>
-            {messages.length === 0 && <li className="text-gray-500">No messages sent yet.</li>}
-            {messages.map(msg => (
-              <li key={msg.id} className="mb-4 p-4 border rounded bg-gray-50 text-black">
-                <div className="text-xs text-gray-400 mb-1">{new Date(msg.created_at).toLocaleString()}</div>
-                <div className="font-semibold mb-1">{msg.subject}</div>
-                <div className="mb-2 whitespace-pre-line">{msg.body}</div>
-                {/* Show all replies for this message */}
-                {replies[msg.id] && replies[msg.id].length > 0 && (
-                  <div className="mb-2">
-                    <div className="font-bold text-green-700 mb-1">Conversation:</div>
-                    <div className="space-y-2">
-                      {replies[msg.id].map((rep: any) => (
-                        <div key={rep.id} className="p-2 bg-green-100 border-l-4 border-green-400 rounded">
-                          <div className="text-xs text-green-700 mb-1">{rep.users?.name || 'Admin'} • {new Date(rep.created_at).toLocaleString()}</div>
-                          <div>{rep.body}</div>
+
+        {/* Send Message Form */}
+        <div className="mb-8">
+          <div className="bg-[#141414] p-6 rounded-xl border border-border/40">
+            <h2 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-blue-400" />
+              Send a New Message
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <input
+                  type="text"
+                  placeholder="Subject"
+                  value={subject}
+                  onChange={e => setSubject(e.target.value)}
+                  className="w-full px-4 py-3 bg-[#232323] border border-border/40 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-muted-foreground"
+                />
+              </div>
+              <div>
+                <textarea
+                  placeholder="Write your message here..."
+                  value={body}
+                  onChange={e => setBody(e.target.value)}
+                  className="w-full px-4 py-3 bg-[#232323] border border-border/40 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-muted-foreground"
+                  rows={5}
+                />
+              </div>
+              <div className="flex justify-end">
+                <Button 
+                  onClick={sendMessage} 
+                  className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white px-6 py-3 flex items-center gap-2"
+                  disabled={!subject || !body}
+                >
+                  <Send className="h-4 w-4" />
+                  Send Message
+                </Button>
+              </div>
+              {error && <div className="text-red-400 text-sm bg-red-900/20 p-3 rounded-lg border border-red-500/20">{error}</div>}
+            </div>
+          </div>
+        </div>
+
+        {/* Messages List */}
+        <div>
+          <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">
+            <MessageSquare className="h-6 w-6 text-emerald-400" />
+            Your Messages
+          </h2>
+          
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="text-muted-foreground">Loading your messages...</div>
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-muted-foreground mb-4">No messages sent yet.</div>
+              <Button 
+                className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white"
+                onClick={() => document.getElementById('send-message')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                Send Your First Message
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {messages.map(msg => (
+                <div key={msg.id} className="bg-[#141414] p-6 rounded-xl border border-border/40">
+                  {/* Message Header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-emerald-500 rounded-full flex items-center justify-center">
+                        <MessageSquare className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-white">{msg.subject}</h3>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          {new Date(msg.created_at).toLocaleString()}
                         </div>
-                      ))}
+                      </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {replies[msg.id]?.length || 0} replies
                     </div>
                   </div>
-                )}
-                <div className="mt-2">
-                  <textarea
-                    placeholder="Write a reply..."
-                    value={replying[msg.id] ?? ''}
-                    onChange={e => handleReplyChange(msg.id, e.target.value)}
-                    className="mb-2 w-full border rounded p-2 text-black"
-                    rows={2}
-                  />
-                  <button
-                    className="w-full bg-blue-500 text-white p-2 rounded"
-                    onClick={() => handleReplySave(msg.id)}
-                    disabled={saving[msg.id] || !replying[msg.id]}
-                  >
-                    {saving[msg.id] ? 'Sending...' : 'Send Reply'}
-                  </button>
+
+                  {/* Message Body */}
+                  <div className="mb-4">
+                    <div className="text-muted-foreground mb-2">Message:</div>
+                    <div className="p-4 bg-[#232323] rounded-lg border border-border/40">
+                      <div className="text-white whitespace-pre-line">{msg.body}</div>
+                    </div>
+                  </div>
+
+                  {/* Replies Section */}
+                  {replies[msg.id] && replies[msg.id].length > 0 && (
+                    <div className="mb-6">
+                      <div className="text-sm font-semibold text-emerald-400 mb-3 flex items-center gap-2">
+                        <Reply className="h-4 w-4" />
+                        Conversation ({replies[msg.id].length} replies)
+                      </div>
+                      <div className="space-y-3">
+                        {replies[msg.id].map((rep: any) => (
+                          <div key={rep.id} className="p-4 bg-[#232323] border-l-4 border-emerald-500 rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <User className="h-4 w-4 text-emerald-400" />
+                              <span className="text-sm font-medium text-emerald-400">
+                                {rep.users?.name || 'Admin'}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(rep.created_at).toLocaleString()}
+                              </span>
+                            </div>
+                            <div className="text-white">{rep.body}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Reply Form */}
+                  <div className="border-t border-border/40 pt-4">
+                    <div className="text-sm font-medium text-white mb-3">Add a reply:</div>
+                    <div className="space-y-3">
+                      <textarea
+                        placeholder="Write your reply..."
+                        value={replying[msg.id] ?? ''}
+                        onChange={e => handleReplyChange(msg.id, e.target.value)}
+                        className="w-full px-4 py-3 bg-[#232323] border border-border/40 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-muted-foreground"
+                        rows={3}
+                      />
+                      <div className="flex justify-end">
+                        <Button
+                          className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white px-6 py-2 flex items-center gap-2"
+                          onClick={() => handleReplySave(msg.id)}
+                          disabled={saving[msg.id] || !replying[msg.id]}
+                        >
+                          <Reply className="h-4 w-4" />
+                          {saving[msg.id] ? 'Sending...' : 'Send Reply'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </li>
-            ))}
-          </ul>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </main>
       <Footer />
     </div>

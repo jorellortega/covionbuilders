@@ -87,6 +87,11 @@ export default function Home() {
         <meta name="twitter:image" content="https://covionbuilders.com/og-image.jpg" />
       </Head>
       <div className="dark flex min-h-screen flex-col" style={{ backgroundColor: '#000000' }}>
+        {/* Under Development Banner - Remove Later */}
+        <div className="bg-yellow-500 text-black text-center py-3 px-4 font-semibold text-lg">
+          🚧 UNDER DEVELOPMENT - COME BACK SOON! 🚧
+        </div>
+        
         {/* Header */}
         <header className="sticky top-0 z-50 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="container flex h-16 items-center justify-between">

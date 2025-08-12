@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -9,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowRight, FileText, HardHat, Ruler, CheckCircle, AlertCircle } from "lucide-react"
+import { ArrowRight, FileText, HardHat, Ruler, CheckCircle, AlertCircle, Phone } from "lucide-react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
@@ -23,7 +24,7 @@ const quoteFormSchema = z.object({
   lastName: z.string().min(2, "Last name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
   phone: z.string().min(10, "Please enter a valid phone number"),
-  projectDescription: z.string().min(10, "Project description must be at least 10 characters"),
+  projectDescription: z.string(),
   projectType: z.string().optional(),
   projectSize: z.string().optional(),
   projectLocation: z.string().optional(),
@@ -76,9 +77,6 @@ export default function QuotePage() {
 
   const selectedServices = watch("services")
 
-  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-  const expandDetails = searchParams?.get('expandDetails') === '1';
-
   // Detect signed-in user on mount
   useEffect(() => {
     const supabase = createSupabaseBrowserClient()
@@ -91,20 +89,39 @@ export default function QuotePage() {
     setIsSubmitting(true)
     setUploading(true)
     let fileUrls: string[] = [];
+    
+    console.log('Submitting quote data:', data);
+    console.log('Uploaded files:', uploadedFiles);
+    
     try {
       const supabase = createSupabaseBrowserClient()
+      
+      // Handle file uploads if any files were selected
       if (uploadedFiles.length > 0) {
         for (const file of uploadedFiles) {
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${data.firstName}-${data.lastName}-${Date.now()}-${file.name}`;
-          const path = `quote_files/${fileName}`;
-          const { error: uploadError } = await supabase.storage.from('builderfiles').upload(path, file, { upsert: true });
-          if (!uploadError) {
+          try {
+            // Sanitize the filename to remove spaces and special characters
+            const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+            const fileName = `${data.firstName.replace(/\s+/g, '_')}-${data.lastName.replace(/\s+/g, '_')}-${Date.now()}-${sanitizedName}`;
+            const path = `quote_files/${fileName}`;
+            const { error: uploadError } = await supabase.storage.from('builderfiles').upload(path, file, { upsert: true });
+            if (uploadError) {
+              console.error('File upload error:', uploadError);
+              toast.error(`Failed to upload ${file.name}. Please try again.`);
+              return;
+            }
             const { data: publicUrlData } = supabase.storage.from('builderfiles').getPublicUrl(path);
-            fileUrls.push(publicUrlData.publicUrl);
+            if (publicUrlData?.publicUrl) {
+              fileUrls.push(publicUrlData.publicUrl);
+            }
+          } catch (fileError) {
+            console.error('File upload error:', fileError);
+            toast.error(`Failed to upload ${file.name}. Please try again.`);
+            return;
           }
         }
       }
+      
       const { error } = await supabase
         .from('quote_requests')
         .insert([
@@ -114,28 +131,37 @@ export default function QuotePage() {
             email: data.email,
             phone: data.phone,
             project_description: data.projectDescription,
-            project_type: data.projectType,
-            project_size: data.projectSize,
-            project_location: data.projectLocation,
-            project_timeline: data.projectTimeline,
-            budget: data.budget,
-            company: data.company,
-            services: data.services,
-            additional_comments: data.additionalComments,
+            project_type: data.projectType || 'General Construction',
+            project_size: data.projectSize || 'Not specified',
+            project_location: data.projectLocation || 'Not specified',
+            project_timeline: data.projectTimeline || 'Not specified',
+            budget: data.budget || 'Not specified',
+            company: data.company || null,
+            services: data.services || [],
+            additional_comments: data.additionalComments || null,
             status: 'pending',
             created_at: new Date().toISOString(),
-            user_id: userId,
             files: fileUrls,
           }
         ])
 
       if (error) {
         console.error('Error submitting quote:', error)
-        toast.error("Failed to submit quote request. Please try again.")
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        toast.error(`Failed to submit quote request: ${error.message}`)
         return
       }
+      
+      console.log('Quote submitted successfully!');
+      console.log('Files saved:', fileUrls);
+      console.log('Files array length:', fileUrls.length);
 
-      toast.success("Quote request submitted successfully! We'll get back to you within 24 hours.")
+      toast.success("Quote request submitted successfully! We'll get back to you within 1-3 business days.")
       setIsSubmitted(true)
       reset()
       setUploadedFiles([])
@@ -168,14 +194,14 @@ export default function QuotePage() {
               </div>
               <h1 className="mb-4 text-3xl font-bold">Thank You!</h1>
               <p className="mb-8 text-xl text-muted-foreground">
-                Your quote request has been submitted successfully. We'll review your project details and get back to you within 24 hours with a detailed estimate.
+                Your quote request has been submitted successfully. We'll review your project details and get back to you within 1-3 business days with a detailed estimate.
               </p>
               <div className="space-y-4">
                 <p className="text-muted-foreground">
                   <strong>What happens next:</strong>
                 </p>
                 <ul className="space-y-2 text-muted-foreground">
-                  <li>• We'll acknowledge your request within 24 hours</li>
+                  <li>• We'll acknowledge your request within 1-3 business days</li>
                   <li>• Our team will review your project requirements</li>
                   <li>• You'll receive a detailed quote within 3-5 business days</li>
                   <li>• We may schedule a consultation to discuss your needs</li>
@@ -210,6 +236,19 @@ export default function QuotePage() {
             <p className="mb-8 text-xl text-muted-foreground">
               Fill out the form below to get a detailed estimate for your construction project.
             </p>
+            
+            {/* Call Button */}
+            <div className="flex flex-col justify-center items-center mb-8">
+              <Button 
+                size="lg" 
+                className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white px-6 py-3 flex items-center gap-2 mb-3"
+                onClick={() => window.location.href = 'tel:+15551234567'}
+              >
+                <Phone className="h-5 w-5" />
+                Call Us Now
+              </Button>
+              <p className="text-muted-foreground text-center">or fill out form below</p>
+            </div>
           </div>
         </div>
 
@@ -319,7 +358,8 @@ export default function QuotePage() {
                       />
                       {errors.projectDescription && <div className="text-red-500 text-sm">{errors.projectDescription.message}</div>}
                     </div>
-                    <div>
+                    
+                    <div className="space-y-2 sm:col-span-2">
                       <label className="block mb-1 font-medium">Upload Photos or Files (optional)</label>
                       <input
                         type="file"
@@ -337,7 +377,7 @@ export default function QuotePage() {
                 </div>
 
                 {/* Project Details, Services Needed, Additional Information as Accordion */}
-                <Accordion type="multiple" className="mt-8" defaultValue={expandDetails ? ["project-details"] : undefined}>
+                <Accordion type="multiple" className="mt-8">
                   <AccordionItem value="project-details">
                     <AccordionTrigger>Project Details</AccordionTrigger>
                     <AccordionContent>
@@ -515,7 +555,7 @@ export default function QuotePage() {
                 <div className="rounded-xl border border-border/40 bg-card/30 p-6">
                   <h3 className="mb-3 text-lg font-medium">Response Time</h3>
                   <p className="text-muted-foreground">
-                    We'll acknowledge your quote request within 24 hours and provide a detailed estimate within 3-5
+                    We'll acknowledge your quote request within 1-3 business days and provide a detailed estimate within 3-5
                     business days, depending on project complexity.
                   </p>
                 </div>
@@ -552,7 +592,90 @@ export default function QuotePage() {
                     <span>Any assumptions or exclusions</span>
                   </li>
                 </ul>
+                                    </div>
+                    </div>
+                  </div>
+                </div>
+      </section>
+
+      {/* Sign Up Section */}
+      <section className="border-t border-border/40 bg-gradient-to-br from-blue-950/20 via-background/95 to-background py-16 md:py-24">
+        <div className="container">
+          <div className="mx-auto max-w-[800px] text-center">
+            <h2 className="mb-6 text-3xl font-bold">Stay Connected with Your Project</h2>
+            <p className="mb-8 text-xl text-muted-foreground">
+              Create a free account to get real-time updates, track progress, and manage everything in one place.
+            </p>
+            
+            <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+              <div className="flex flex-col items-center space-y-2">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-600/20 text-blue-400">
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <span className="text-sm font-medium">Live Updates</span>
               </div>
+              
+              <div className="flex flex-col items-center space-y-2">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-600/20 text-emerald-400">
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                </div>
+                <span className="text-sm font-medium">Project Tracking</span>
+              </div>
+              
+              <div className="flex flex-col items-center space-y-2">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-600/20 text-purple-400">
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <span className="text-sm font-medium">Quotes & Receipts</span>
+              </div>
+              
+              <div className="flex flex-col items-center space-y-2">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-600/20 text-orange-400">
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                </div>
+                <span className="text-sm font-medium">Easy Payments</span>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <p className="text-muted-foreground">
+                With your account, you can:
+              </p>
+              <ul className="mx-auto max-w-[600px] space-y-2 text-muted-foreground">
+                <li className="flex items-center justify-center gap-2">
+                  <ArrowRight className="h-4 w-4 text-primary" />
+                  <span>Get real-time project updates and notifications</span>
+                </li>
+                <li className="flex items-center justify-center gap-2">
+                  <ArrowRight className="h-4 w-4 text-primary" />
+                  <span>View all your projects, quotes, and receipts in one dashboard</span>
+                </li>
+                <li className="flex items-center justify-center gap-2">
+                  <ArrowRight className="h-4 w-4 text-primary" />
+                  <span>Make secure payments and track payment history</span>
+                </li>
+                <li className="flex items-center justify-center gap-2">
+                  <ArrowRight className="h-4 w-4 text-primary" />
+                  <span>Communicate directly with our team</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white" asChild>
+                <Link href="/signup">Create Free Account</Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild>
+                <Link href="/login">Already have an account? Sign In</Link>
+              </Button>
             </div>
           </div>
         </div>

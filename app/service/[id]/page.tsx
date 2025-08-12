@@ -39,6 +39,8 @@ export default function ServiceDetailPage() {
   });
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
   const supabase = createSupabaseBrowserClient();
 
   useEffect(() => {
@@ -67,23 +69,62 @@ export default function ServiceDetailPage() {
       setError('Please fill in all required fields.');
       return;
     }
-    // Insert quote request (customize table/fields as needed)
-    const { error } = await supabase.from('quote_requests').insert({
-      first_name: form.name,
-      email: form.email,
-      phone: form.phone,
-      project_description: form.project_details,
-      project_type: service?.title || '',
-      services: service?.title || '',
-      project_size: optional.project_size || null,
-      project_location: optional.project_location || null,
-      project_timeline: optional.project_timeline || null,
-      budget: optional.budget || null,
-      company: optional.company || null,
-      additional_comments: optional.additional_comments || null,
-    });
-    if (error) { setError(error.message); return; }
-    setSubmitted(true);
+    
+    setUploading(true);
+    let fileUrls: string[] = [];
+    
+    try {
+      // Handle file uploads if any files were selected
+      if (uploadedFiles.length > 0) {
+        for (const file of uploadedFiles) {
+          try {
+            // Sanitize the filename to remove spaces and special characters
+            const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+            const fileName = `${form.name.replace(/\s+/g, '_')}-${Date.now()}-${sanitizedName}`;
+            const path = `quote_files/${fileName}`;
+            const { error: uploadError } = await supabase.storage.from('builderfiles').upload(path, file, { upsert: true });
+            if (uploadError) {
+              console.error('File upload error:', uploadError);
+              setError(`Failed to upload ${file.name}. Please try again.`);
+              return;
+            }
+            const { data: publicUrlData } = supabase.storage.from('builderfiles').getPublicUrl(path);
+            if (publicUrlData?.publicUrl) {
+              fileUrls.push(publicUrlData.publicUrl);
+            }
+          } catch (fileError) {
+            console.error('File upload error:', fileError);
+            setError(`Failed to upload ${file.name}. Please try again.`);
+            return;
+          }
+        }
+      }
+      
+      // Insert quote request with files
+      const { error } = await supabase.from('quote_requests').insert({
+        first_name: form.name,
+        email: form.email,
+        phone: form.phone,
+        project_description: form.project_details,
+        project_type: service?.title || '',
+        services: service?.title || '',
+        project_size: optional.project_size || null,
+        project_location: optional.project_location || null,
+        project_timeline: optional.project_timeline || null,
+        budget: optional.budget || null,
+        company: optional.company || null,
+        additional_comments: optional.additional_comments || null,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+        files: fileUrls,
+      });
+      if (error) { setError(error.message); return; }
+      setSubmitted(true);
+    } catch (error) {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setUploading(false);
+    }
   }
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
@@ -143,6 +184,22 @@ export default function ServiceDetailPage() {
                     <label className="block mb-1 text-white font-semibold">Project Details</label>
                     <textarea name="project_details" value={form.project_details} onChange={handleChange} className="w-full rounded-md border border-border/40 bg-black/30 p-2 text-white" rows={3} required />
                   </div>
+                  
+                  <div>
+                    <label className="block mb-1 text-white font-semibold">Upload Photos or Files (optional)</label>
+                    <input
+                      type="file"
+                      accept="image/*,.pdf,.doc,.docx"
+                      multiple
+                      onChange={e => setUploadedFiles(e.target.files ? Array.from(e.target.files) : [])}
+                      className="w-full rounded-md border border-border/40 bg-black/30 p-2 text-white"
+                      disabled={uploading}
+                    />
+                    {uploadedFiles.length > 0 && (
+                      <div className="text-xs text-gray-400 mt-1">{uploadedFiles.length} file(s) selected</div>
+                    )}
+                  </div>
+                  
                   <Accordion type="single" collapsible className="mb-4">
                     <AccordionItem value="optional">
                       <AccordionTrigger className="text-white font-semibold">Add Optional Project Details</AccordionTrigger>

@@ -164,6 +164,41 @@ export default function CeoMessagesPage() {
               <div className="text-gray-200 mb-1">Status: {latestQuote.status}</div>
               <div className="text-gray-200 mb-1">Budget: {latestQuote.budget}</div>
               <div className="text-gray-400 mb-2 text-xs">Submitted: {latestQuote.created_at && new Date(latestQuote.created_at).toLocaleString()}</div>
+              
+              {/* Show uploaded files/images */}
+              {latestQuote.files && latestQuote.files.length > 0 && (
+                <div className="mt-3">
+                  <div className="text-gray-200 mb-2 text-sm font-medium">Uploaded Files:</div>
+                  <div className="flex gap-2 flex-wrap">
+                    {latestQuote.files.map((fileUrl: string, index: number) => {
+                      const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileUrl);
+                      return (
+                        <div key={index} className="relative group">
+                          {isImage ? (
+                            <img
+                              src={fileUrl}
+                              alt={`File ${index + 1}`}
+                              className="w-16 h-16 object-cover rounded border border-border/40 cursor-pointer hover:scale-110 transition-transform"
+                              onClick={() => window.open(fileUrl, '_blank')}
+                              title="Click to view full size"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 bg-gray-700 rounded border border-border/40 flex items-center justify-center">
+                              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                            </div>
+                          )}
+                          <div className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                            {index + 1}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              
               {latestQuote.project_id && (
                 <a
                   href={`/viewproject/${latestQuote.project_id}`}

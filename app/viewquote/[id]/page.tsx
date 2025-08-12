@@ -78,14 +78,98 @@ export default function ViewQuotePage() {
             <div><b>Email:</b> {quote.email}</div>
             <div><b>Status:</b> {quote.status || 'pending'}</div>
             <div><b>Project Description:</b> {quote.project_description}</div>
-            <div><b>Project Type:</b> {quote.project_type}</div>
-            <div><b>Project Size:</b> {quote.project_size}</div>
-            <div><b>Project Location:</b> {quote.project_location}</div>
-            <div><b>Project Timeline:</b> {quote.project_timeline}</div>
-            <div><b>Budget:</b> {quote.budget}</div>
-            <div><b>Company:</b> {quote.company}</div>
-            <div><b>Services:</b> {Array.isArray(quote.services) ? quote.services.join(', ') : ''}</div>
-            <div><b>Additional Comments:</b> {quote.additional_comments}</div>
+            {quote.project_type && quote.project_type !== 'General Construction' && (
+              <div><b>Project Type:</b> {quote.project_type}</div>
+            )}
+            {quote.project_size && quote.project_size !== 'Not specified' && (
+              <div><b>Project Size:</b> {quote.project_size}</div>
+            )}
+            {quote.project_location && quote.project_location !== 'Not specified' && (
+              <div><b>Project Location:</b> {quote.project_location}</div>
+            )}
+            {quote.project_timeline && quote.project_timeline !== 'Not specified' && (
+              <div><b>Project Timeline:</b> {quote.project_timeline}</div>
+            )}
+            {quote.budget && quote.budget !== 'Not specified' && (
+              <div><b>Budget:</b> {quote.budget}</div>
+            )}
+            {quote.company && (
+              <div><b>Company:</b> {quote.company}</div>
+            )}
+            {quote.services && Array.isArray(quote.services) && quote.services.length > 0 && (
+              <div><b>Services:</b> {quote.services.join(', ')}</div>
+            )}
+            {quote.additional_comments && (
+              <div><b>Additional Comments:</b> {quote.additional_comments}</div>
+            )}
+            
+            {/* Uploaded Files Section */}
+            {quote.files && quote.files.length > 0 && (
+              <div className="mt-6 p-4 rounded-xl border border-border/40 bg-black">
+                <h3 className="text-xl font-bold text-white mb-4">Uploaded Files & Images</h3>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {quote.files.map((fileUrl: string, index: number) => {
+                    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileUrl);
+                    return (
+                      <div key={index} className="relative group">
+                        {isImage ? (
+                          <div className="space-y-2">
+                            <img
+                              src={fileUrl}
+                              alt={`File ${index + 1}`}
+                              className="w-full h-48 object-cover rounded-lg border border-border/40 cursor-pointer hover:scale-105 transition-transform shadow-lg"
+                              onClick={() => window.open(fileUrl, '_blank')}
+                              title="Click to view full size"
+                            />
+                            <div className="text-center space-y-2">
+                              <span className="text-sm text-gray-300">Image {index + 1}</span>
+                              <div className="flex gap-2 justify-center">
+                                <a 
+                                  href={fileUrl} 
+                                  download
+                                  className="text-blue-400 hover:text-blue-300 text-sm underline"
+                                >
+                                  Download
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <div className="w-full h-48 bg-gray-700 rounded-lg border border-border/40 flex items-center justify-center">
+                              <div className="text-center">
+                                <svg className="w-16 h-16 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <div className="text-sm text-gray-300">Document</div>
+                                <div className="text-xs text-gray-400 truncate">{fileUrl.split('/').pop()}</div>
+                              </div>
+                            </div>
+                            <div className="text-center space-y-2">
+                              <div className="flex gap-2 justify-center">
+                                <a 
+                                  href={fileUrl} 
+                                  download
+                                  className="text-blue-400 hover:text-blue-300 text-sm underline"
+                                >
+                                  Download
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-4 text-center">
+                  <span className="text-sm text-gray-400">
+                    {quote.files.length} file{quote.files.length !== 1 ? 's' : ''} uploaded
+                  </span>
+                </div>
+              </div>
+            )}
+            
             {/* Show Estimated Price */}
             {quote.estimated_price && (
               <div className="mt-6 p-4 rounded-xl border border-border/40 bg-gradient-to-br from-blue-900/30 to-emerald-900/20">

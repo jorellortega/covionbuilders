@@ -95,7 +95,7 @@ export default function CeoDashboardPage() {
       const supabase = createSupabaseBrowserClient();
       const { data } = await supabase
         .from('quote_requests')
-        .select('id, created_at, project_id, user_id, status, project_type, budget')
+        .select('id, created_at, project_id, user_id, status, project_type, budget, files')
         .order('created_at', { ascending: false })
         .limit(3);
       setRecentQuotes(data || []);
@@ -207,15 +207,49 @@ export default function CeoDashboardPage() {
               {/* Compact list of last 3 quotes */}
               <div className="mt-2">
                 <div className="text-xs text-blue-300 font-semibold mb-1">Recent Submissions:</div>
-                <ul className="space-y-1">
+                <ul className="space-y-2">
                   {recentQuotes.map(q => (
-                    <li key={q.id} className="flex items-center justify-between bg-[#23272e] rounded px-2 py-1 gap-2">
-                      <a href={`/quotes/${q.id}`} className="text-blue-400 hover:underline text-sm font-medium truncate max-w-[120px]">
-                        {q.project_type || 'No Project'}
-                      </a>
-                      <span className="text-xs text-gray-300 truncate max-w-[80px]">{q.user_id}</span>
-                      <span className="text-xs text-gray-400">{q.created_at && new Date(q.created_at).toLocaleString()}</span>
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded ${q.status === 'pending' ? 'bg-yellow-600 text-white' : q.status === 'approved' ? 'bg-emerald-700 text-white' : 'bg-gray-700 text-gray-200'}`}>{q.status}</span>
+                    <li key={q.id} className="bg-[#23272e] rounded p-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <a href={`/quotes/${q.id}`} className="text-blue-400 hover:underline text-sm font-medium truncate max-w-[120px]">
+                          {q.project_type || 'No Project'}
+                        </a>
+                        <span className="text-xs text-gray-300 truncate max-w-[80px]">{q.user_id}</span>
+                        <span className="text-xs text-gray-400">{q.created_at && new Date(q.created_at).toLocaleString()}</span>
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded ${q.status === 'pending' ? 'bg-yellow-600 text-white' : q.status === 'approved' ? 'bg-emerald-700 text-white' : 'bg-gray-700 text-gray-200'}`}>{q.status}</span>
+                      </div>
+                      {/* Show uploaded files/images */}
+                      {q.files && q.files.length > 0 && (
+                        <div className="flex gap-1">
+                          {q.files.slice(0, 3).map((fileUrl: string, index: number) => {
+                            const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileUrl);
+                            return (
+                              <div key={index} className="relative group">
+                                {isImage ? (
+                                  <img
+                                    src={fileUrl}
+                                    alt={`File ${index + 1}`}
+                                    className="w-8 h-8 object-cover rounded border border-border/40 cursor-pointer hover:scale-110 transition-transform"
+                                    onClick={() => window.open(fileUrl, '_blank')}
+                                    title="Click to view full size"
+                                  />
+                                ) : (
+                                  <div className="w-8 h-8 bg-gray-700 rounded border border-border/40 flex items-center justify-center">
+                                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                  </div>
+                                )}
+                                {index === 2 && q.files.length > 3 && (
+                                  <div className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                                    +{q.files.length - 3}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </li>
                   ))}
                 </ul>

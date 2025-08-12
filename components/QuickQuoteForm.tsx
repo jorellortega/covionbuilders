@@ -51,13 +51,22 @@ export function QuickQuoteForm() {
           }
         }
       }
-      await supabase.from('quick_quote_requests').insert([
+      await supabase.from('quote_requests').insert([
         {
           first_name: data.firstName,
           last_name: data.lastName,
           email: data.email,
           phone: data.phone,
           project_description: data.projectDescription,
+          project_type: 'Quick Quote',
+          project_size: 'Not specified',
+          project_location: 'Not specified',
+          project_timeline: 'Not specified',
+          budget: 'Not specified',
+          company: null,
+          services: [],
+          additional_comments: null,
+          status: 'pending',
           created_at: new Date().toISOString(),
           files: fileUrls,
         }

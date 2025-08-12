@@ -82,6 +82,8 @@ export default function DashboardPage() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userName, setUserName] = useState('User');
+  const [userQuotes, setUserQuotes] = useState<any[]>([]);
+  const [quotesLoading, setQuotesLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
@@ -98,6 +100,20 @@ export default function DashboardPage() {
         if (data && data.name) {
           setUserName(data.name);
         }
+        
+        // Fetch user's quotes
+        if (userId) {
+          const { data: quotesData, error: quotesError } = await supabase
+            .from('quote_requests')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
+          
+          if (!quotesError && quotesData) {
+            setUserQuotes(quotesData);
+          }
+        }
+        setQuotesLoading(false);
       }
     }
     fetchUserName();
@@ -199,6 +215,79 @@ export default function DashboardPage() {
               <p className="text-muted-foreground text-lg">Here's your latest project and payment activity.</p>
             </div>
           </div>
+          {/* Quote Status Section */}
+          <div className="rounded-xl border border-border/40 bg-[#141414] p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-white">My Quote Requests</h3>
+              <Link href="/quote">
+                <Button size="sm" variant="outline" className="font-semibold">Submit New Quote</Button>
+              </Link>
+            </div>
+            
+            {quotesLoading ? (
+              <div className="text-muted-foreground text-center py-4">Loading quotes...</div>
+            ) : userQuotes.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-muted-foreground mb-4">No quote requests yet</div>
+                <Link href="/quote">
+                  <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white">
+                    Submit Your First Quote
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {userQuotes.map((quote, index) => (
+                  <div key={quote.id} className="flex items-center justify-between p-4 rounded-lg border border-border/40 bg-black/30 hover:bg-black/50 transition-colors">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-sm text-muted-foreground">
+                          {new Date(quote.created_at).toLocaleDateString()}
+                        </span>
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                          quote.status === 'approved' ? 'bg-emerald-900/40 text-emerald-400' :
+                          quote.status === 'pending' ? 'bg-yellow-900/40 text-yellow-400' :
+                          quote.status === 'reviewed' ? 'bg-blue-900/40 text-blue-400' :
+                          quote.status === 'contacted' ? 'bg-purple-900/40 text-purple-400' :
+                          'bg-gray-900/40 text-gray-400'
+                        }`}>
+                          {quote.status === 'approved' && <CheckCircle className="h-3 w-3" />}
+                          {quote.status === 'pending' && <AlertTriangle className="h-3 w-3" />}
+                          {quote.status === 'reviewed' && <Briefcase className="h-3 w-3" />}
+                          {quote.status === 'contacted' && <User className="h-3 w-3" />}
+                          {quote.status}
+                        </span>
+                      </div>
+                      <div className="text-white font-medium mb-1">
+                        {quote.project_type || 'General Construction'}
+                      </div>
+                      <div className="text-sm text-muted-foreground line-clamp-2">
+                        {quote.project_description}
+                      </div>
+                      {quote.estimated_price && (
+                        <div className="text-sm text-emerald-400 mt-2">
+                          Estimated Price: ${Number(quote.estimated_price).toLocaleString()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2 ml-4">
+                      <Link href={`/viewquote/${quote.id}`}>
+                        <Button size="sm" variant="outline">View Details</Button>
+                      </Link>
+                      {quote.status === 'approved' && (
+                        <Link href={`/pay/${quote.id}`}>
+                          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+                            Make Payment
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
           {/* Active Project Status Bar directly below welcome card */}
           {activeProjects.length > 0 && (
             <div className="rounded-xl border border-border/40 bg-gradient-to-r from-blue-900/40 to-emerald-900/30 p-6 mb-2 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
