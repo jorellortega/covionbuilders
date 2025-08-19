@@ -1,8 +1,6 @@
 'use client';
 import { Button } from "@/components/ui/button"
-import { ArrowRight } from "lucide-react"
-import Header from "@/components/header"
-import Footer from "@/components/footer"
+import { ArrowRight, Building2, HardHat, Hammer, Ruler, Shield, Layers } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import React, { useEffect, useState } from "react"
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient"
@@ -25,9 +23,20 @@ export default function ServicesPage() {
   useEffect(() => {
     const fetchServices = async () => {
       setLoading(true);
-      const supabase = createSupabaseBrowserClient();
-      const { data, error } = await supabase.from('services').select('*').order('title');
-      if (!error && data) setServices(data);
+      try {
+        const supabase = createSupabaseBrowserClient();
+        console.log('Fetching services...');
+        const { data, error } = await supabase.from('services').select('*').order('title');
+        console.log('Services response:', { data, error });
+        if (error) {
+          console.error('Error fetching services:', error);
+        } else if (data) {
+          console.log('Services data:', data);
+          setServices(data);
+        }
+      } catch (err) {
+        console.error('Exception fetching services:', err);
+      }
       setLoading(false);
     };
     fetchServices();
@@ -39,8 +48,45 @@ export default function ServicesPage() {
   );
 
   return (
-    <div className="dark flex min-h-screen flex-col">
-      <Header />
+    <div className="dark flex min-h-screen flex-col" style={{ backgroundColor: '#000000' }}>
+      {/* Header */}
+      <header className="sticky top-0 z-50 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
+              <Building2 className="h-8 w-8 text-primary" />
+              <span className="text-xl font-bold">Covion Builders</span>
+            </Link>
+          </div>
+
+          <nav className="hidden md:flex">
+            <ul className="flex space-x-8">
+              {[
+                { name: "Services", path: "/services" },
+                { name: "Projects", path: "/projects" },
+                { name: "About", path: "/about" },
+                { name: "Careers", path: "/careers" },
+                { name: "Contact", path: "/contact" },
+              ].map((item) => (
+                <li key={item.name}>
+                  <Link href={item.path} className="text-foreground/80 transition-colors hover:text-primary">
+                    {item.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <div className="flex items-center gap-4">
+            <Button variant="outline" className="hidden md:inline-flex" asChild>
+              <Link href="/contact">Contact Us</Link>
+            </Button>
+            <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white" asChild>
+              <Link href="/quote">Get Quote</Link>
+            </Button>
+          </div>
+        </div>
+      </header>
       <section className="relative border-b border-border/40 bg-gradient-to-br from-background via-background/95 to-blue-950/20 py-16 md:py-24">
         <div className="container relative z-10">
           <div className="mx-auto max-w-[800px] text-center">
@@ -124,7 +170,82 @@ export default function ServicesPage() {
           )}
         </div>
       </section>
-      <Footer />
+      
+      {/* Footer */}
+      <footer className="border-t border-border/40 bg-card/30 py-12 md:py-16">
+        <div className="container">
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <div className="mb-4 flex items-center gap-2">
+                <Building2 className="h-8 w-8 text-primary" />
+                <span className="text-xl font-bold">Covion Builders</span>
+              </div>
+              <p className="mb-4 text-muted-foreground">
+                Building the future with innovative construction solutions and sustainable practices.
+              </p>
+              <div className="flex space-x-4">
+                {["Twitter", "LinkedIn", "Instagram", "Facebook"].map((social) => (
+                  <Link
+                    key={social}
+                    href="#"
+                    className="rounded-full bg-background p-2 text-foreground/80 transition-colors hover:text-primary"
+                  >
+                    <span className="sr-only">{social}</span>
+                    <div className="h-5 w-5" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="mb-4 text-lg font-semibold">Services</h3>
+              <ul className="space-y-2">
+                {[
+                  { name: "Concrete", path: "/concrete" },
+                  { name: "General Labor", path: "/general-labor" },
+                  { name: "Painting", path: "/painting" },
+                  { name: "Roofing", path: "/roofing" },
+                  { name: "Remodeling", path: "/remodeling" },
+                  { name: "Landscaping", path: "/landscaping" },
+                ].map((item) => (
+                  <li key={item.name}>
+                    <Link href={item.path} className="text-muted-foreground transition-colors hover:text-primary">
+                      {item.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="mb-4 text-lg font-semibold">Company</h3>
+              <ul className="space-y-2">
+                {["About Us", "Projects", "Careers", "Contact"].map((item) => (
+                  <li key={item}>
+                    <Link href={item === "About Us" ? "/about" : item === "Projects" ? "/projects" : item === "Careers" ? "/careers" : "/contact"} className="text-muted-foreground transition-colors hover:text-primary">
+                      {item}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="mb-4 text-lg font-semibold">Contact</h3>
+              <div className="text-muted-foreground">
+                <p className="mb-2">Serving California</p>
+                <p className="mb-2">covionbuilders@gmail.com</p>
+                <p className="mb-2">(951) 723-4052</p>
+                <p><Link href="/contact" className="text-primary hover:underline">Contact Us</Link></p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-12 border-t border-border/40 pt-6 text-center text-sm text-muted-foreground">
+            <p>© {new Date().getFullYear()} Covion Builders. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

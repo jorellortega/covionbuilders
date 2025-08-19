@@ -19,6 +19,20 @@ CREATE TABLE IF NOT EXISTS quote_requests (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Create the services table
+CREATE TABLE IF NOT EXISTS services (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  icon TEXT NOT NULL,
+  features TEXT[],
+  image_url TEXT,
+  is_active BOOLEAN DEFAULT true,
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Create an index on email for faster lookups
 CREATE INDEX IF NOT EXISTS idx_quote_requests_email ON quote_requests(email);
 
@@ -28,8 +42,14 @@ CREATE INDEX IF NOT EXISTS idx_quote_requests_status ON quote_requests(status);
 -- Create an index on created_at for sorting
 CREATE INDEX IF NOT EXISTS idx_quote_requests_created_at ON quote_requests(created_at DESC);
 
+-- Create indexes for services table
+CREATE INDEX IF NOT EXISTS idx_services_title ON services(title);
+CREATE INDEX IF NOT EXISTS idx_services_is_active ON services(is_active);
+CREATE INDEX IF NOT EXISTS idx_services_sort_order ON services(sort_order);
+
 -- Enable Row Level Security (RLS)
 ALTER TABLE quote_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE services ENABLE ROW LEVEL SECURITY;
 
 -- Create a policy that allows anyone to insert quote requests
 CREATE POLICY "Allow public insert on quote_requests" ON quote_requests
@@ -39,6 +59,13 @@ CREATE POLICY "Allow public insert on quote_requests" ON quote_requests
 -- You can modify this based on your authentication requirements
 CREATE POLICY "Allow authenticated users to view quote_requests" ON quote_requests
   FOR SELECT USING (auth.role() = 'authenticated');
+
+-- Create policies for services table
+CREATE POLICY "Allow public view on services" ON services
+  FOR SELECT USING (true);
+
+CREATE POLICY "Allow authenticated users to manage services" ON services
+  FOR ALL USING (auth.role() = 'authenticated');
 
 -- Create a function to automatically update the updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -53,4 +80,18 @@ $$ language 'plpgsql';
 CREATE TRIGGER update_quote_requests_updated_at 
     BEFORE UPDATE ON quote_requests 
     FOR EACH ROW 
-    EXECUTE FUNCTION update_updated_at_column(); 
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_services_updated_at 
+    BEFORE UPDATE ON services 
+    FOR EACH ROW 
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Insert sample services data
+INSERT INTO services (title, description, icon, features, sort_order) VALUES
+('Concrete', 'Expert concrete work for foundations, driveways, sidewalks, and more.', 'Building2', ARRAY['Foundation work', 'Driveway installation', 'Sidewalk construction', 'Concrete repair'], 1),
+('General Labor', 'Skilled and general labor for construction, site preparation, and support tasks.', 'HardHat', ARRAY['Site preparation', 'Material handling', 'Cleanup services', 'Support tasks'], 2),
+('Painting', 'Interior and exterior painting for homes, offices, and commercial spaces.', 'Hammer', ARRAY['Interior painting', 'Exterior painting', 'Color consultation', 'Surface preparation'], 3),
+('Roofing', 'Professional roofing installation, repair, and maintenance for all building types.', 'Ruler', ARRAY['Roof installation', 'Roof repair', 'Maintenance', 'Inspection'], 4),
+('Remodeling', 'Modernizing existing structures while preserving their character and integrity.', 'Shield', ARRAY['Kitchen remodeling', 'Bathroom updates', 'Room additions', 'Structural modifications'], 5),
+('Landscaping', 'Professional landscaping services to enhance outdoor spaces and curb appeal.', 'Layers', ARRAY['Garden design', 'Lawn maintenance', 'Hardscaping', 'Plant selection'], 6); 

@@ -342,6 +342,13 @@ export default function CeoDashboardPage() {
                 <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white font-semibold">Manage Services</Button>
               </Link>
             </div>
+            <div className="rounded-xl border border-border/40 bg-[#141414] p-6 shadow-lg">
+              <h2 className="mb-4 text-xl font-bold text-white">Contract Library</h2>
+              <p className="mb-4 text-muted-foreground">Manage contract templates, upload contracts, and track signed agreements.</p>
+              <Link href="/contracts">
+                <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white font-semibold">Manage Contracts</Button>
+              </Link>
+            </div>
           </div>
           <div className="mb-8">
             <h2 className="text-3xl font-bold mb-4">Quote Management</h2>

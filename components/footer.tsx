@@ -90,12 +90,12 @@ export default function Footer() {
 
           <div>
             <h3 className="mb-4 text-lg font-semibold">Contact</h3>
-            <address className="not-italic text-muted-foreground">
-              <p>123 Construction Way</p>
-              <p>Building City, BC 12345</p>
-              <p className="mt-2">info@covionbuilders.com</p>
-              <p>(555) 123-4567</p>
-            </address>
+                          <div className="text-muted-foreground">
+                <p className="mb-2">Serving California</p>
+                <p className="mb-2">covionbuilders@gmail.com</p>
+                <p className="mb-2">(951) 723-4052</p>
+                <p><Link href="/contact" className="text-primary hover:underline">Contact Us</Link></p>
+              </div>
           </div>
         </div>
 
