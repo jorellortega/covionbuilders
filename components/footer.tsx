@@ -6,6 +6,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 
 export default function Footer() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [aboutPageVisible, setAboutPageVisible] = useState(true);
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     supabase.auth.getSession().then(({ data }) => {
@@ -19,8 +20,30 @@ export default function Footer() {
     };
   }, []);
 
+  useEffect(() => {
+    // Fetch about page visibility setting
+    const fetchAboutPageVisibility = async () => {
+      try {
+        const supabase = createSupabaseBrowserClient();
+        const { data } = await supabase
+          .from('site_settings')
+          .select('setting_value')
+          .eq('setting_key', 'about_page_visible')
+          .single();
+        
+        if (data) {
+          setAboutPageVisible(data.setting_value === 'true');
+        }
+      } catch (err) {
+        // Default to visible if setting not found
+        setAboutPageVisible(true);
+      }
+    };
+    fetchAboutPageVisibility();
+  }, []);
+
   const companyLinks = [
-    { name: "About Us", path: "/about" },
+    ...(aboutPageVisible ? [{ name: "About Us", path: "/about" }] : []),
     { name: "Projects", path: "/projects" },
     { name: "Careers", path: "/careers" },
     { name: "Contact", path: "/contact" },
@@ -57,16 +80,16 @@ export default function Footer() {
             <h3 className="mb-4 text-lg font-semibold">Services</h3>
             <ul className="space-y-2">
               {[
-                { name: "Concrete", path: "/concrete" },
-                { name: "General Labor", path: "/general-labor" },
-                { name: "Painting", path: "/painting" },
-                { name: "Roofing", path: "/roofing" },
-                { name: "Remodeling", path: "/remodeling" },
-                { name: "Landscaping", path: "/landscaping" },
+                "Concrete",
+                "General Labor",
+                "Painting",
+                "Roofing",
+                "Remodeling",
+                "Landscaping",
               ].map((item) => (
-                <li key={item.name}>
-                  <Link href={item.path} className="text-muted-foreground transition-colors hover:text-primary">
-                    {item.name}
+                <li key={item}>
+                  <Link href={`/${item.toLowerCase().replace(/ /g, '-')}`} className="text-muted-foreground transition-colors hover:text-primary">
+                    {item}
                   </Link>
                 </li>
               ))}
@@ -90,30 +113,19 @@ export default function Footer() {
 
           <div>
             <h3 className="mb-4 text-lg font-semibold">Contact</h3>
-                          <div className="text-muted-foreground">
-                <p className="mb-2">Serving California</p>
-                <p className="mb-2">covionbuilders@gmail.com</p>
-                <p className="mb-2">(951) 723-4052</p>
-                <p><Link href="/contact" className="text-primary hover:underline">Contact Us</Link></p>
-              </div>
+            <div className="text-muted-foreground">
+              <p className="mb-2">Serving California</p>
+              <p className="mb-2">covionbuilders@gmail.com</p>
+              <p className="mb-2">(951) 723-4052</p>
+              <p><Link href="/contact" className="text-primary hover:underline">Contact Us</Link></p>
+            </div>
           </div>
         </div>
 
         <div className="mt-12 border-t border-border/40 pt-6 text-center text-sm text-muted-foreground">
-          <div className="flex flex-col items-center gap-2">
-            <p>© {new Date().getFullYear()} Covion Builders. All rights reserved. <span className="text-xs text-muted-foreground">Developed by JOR.</span></p>
-            {!isLoggedIn && (
-              <a
-                href="/login"
-                className="inline-block rounded-md bg-gradient-to-r from-blue-600 to-emerald-500 px-4 py-2 text-white font-semibold shadow hover:from-blue-700 hover:to-emerald-600 transition-colors mt-2"
-              >
-                Login / Signup
-              </a>
-            )}
-          </div>
+          <p>© {new Date().getFullYear()} Covion Builders. All rights reserved.</p>
         </div>
       </div>
     </footer>
   )
 }
-

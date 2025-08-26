@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation"
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [dashboardHref, setDashboardHref] = useState("/dashboard");
+  const [aboutPageVisible, setAboutPageVisible] = useState(true);
   const router = useRouter();
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -43,6 +44,28 @@ export default function Header() {
     };
   }, []);
 
+  useEffect(() => {
+    // Fetch about page visibility setting
+    const fetchAboutPageVisibility = async () => {
+      try {
+        const supabase = createSupabaseBrowserClient();
+        const { data } = await supabase
+          .from('site_settings')
+          .select('setting_value')
+          .eq('setting_key', 'about_page_visible')
+          .single();
+        
+        if (data) {
+          setAboutPageVisible(data.setting_value === 'true');
+        }
+      } catch (err) {
+        // Default to visible if setting not found
+        setAboutPageVisible(true);
+      }
+    };
+    fetchAboutPageVisibility();
+  }, []);
+
   const handleLogout = async () => {
     const supabase = createSupabaseBrowserClient();
     await supabase.auth.signOut();
@@ -67,7 +90,7 @@ export default function Header() {
               {[
                 { name: "Services", path: "/services" },
                 { name: "Projects", path: "/projects" },
-                { name: "About", path: "/about" },
+                ...(aboutPageVisible ? [{ name: "About", path: "/about" }] : []),
                 { name: "Careers", path: "/careers" },
                 { name: "Contact", path: "/contact" },
               ]

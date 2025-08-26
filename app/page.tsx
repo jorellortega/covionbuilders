@@ -6,6 +6,7 @@ import { useEffect, useState } from "react"
 import Head from 'next/head';
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 import { QuickQuoteForm } from "@/components/QuickQuoteForm"
+import Footer from "@/components/footer"
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -13,6 +14,23 @@ export default function Home() {
   const [heroImageUrl, setHeroImageUrl] = useState<string>('/placeholder.svg?height=400&width=600');
   const [supabase] = useState(() => createSupabaseBrowserClient());
   const [featuredProjects, setFeaturedProjects] = useState<any[]>([]);
+  const [homepageProjectsVisible, setHomepageProjectsVisible] = useState(true);
+  const [homepageViewProjectsButtonVisible, setHomepageViewProjectsButtonVisible] = useState(true);
+  const [services, setServices] = useState<any[]>([]);
+
+  // Function to get service icon component
+  const getServiceIcon = (iconName: string) => {
+    const iconMap: { [key: string]: any } = {
+      'Building2': Building2,
+      'HardHat': HardHat,
+      'Hammer': Hammer,
+      'Ruler': Ruler,
+      'Shield': Shield,
+      'Layers': Layers,
+    };
+    const IconComponent = iconMap[iconName] || Building2;
+    return <IconComponent className="h-6 w-6" />;
+  };
 
   useEffect(() => {
     const checkLogin = () => {
@@ -60,6 +78,67 @@ export default function Home() {
       }
     };
     fetchFeaturedProjects();
+
+    // Fetch homepage projects visibility setting
+    const fetchHomepageProjectsVisibility = async () => {
+      try {
+        const { data } = await supabase
+          .from('site_settings')
+          .select('setting_value')
+          .eq('setting_key', 'homepage_projects_visible')
+          .single();
+        
+        if (data) {
+          setHomepageProjectsVisible(data.setting_value === 'true');
+        }
+      } catch (err) {
+        // Default to visible if setting not found
+        setHomepageProjectsVisible(true);
+      }
+    };
+    fetchHomepageProjectsVisibility();
+
+    // Fetch homepage "View Our Projects" button visibility setting
+    const fetchHomepageViewProjectsButtonVisibility = async () => {
+      try {
+        const { data } = await supabase
+          .from('site_settings')
+          .select('setting_value')
+          .eq('setting_key', 'homepage_view_projects_button_visible')
+          .single();
+        
+        if (data) {
+          setHomepageViewProjectsButtonVisible(data.setting_value === 'true');
+        }
+      } catch (err) {
+        // Default to visible if setting not found
+        setHomepageViewProjectsButtonVisible(true);
+      }
+    };
+    fetchHomepageViewProjectsButtonVisibility();
+
+    // Fetch services for the services section
+    const fetchServices = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('services')
+          .select('*')
+          .order('title');
+        
+        if (error) {
+          console.error('Error fetching services:', error);
+          return;
+        }
+        
+        if (data) {
+          console.log('Fetched services:', data);
+          setServices(data);
+        }
+      } catch (err) {
+        console.error('Error fetching services:', err);
+      }
+    };
+    fetchServices();
 
     return () => window.removeEventListener('storage', checkLogin);
   }, [supabase]);
@@ -148,16 +227,21 @@ export default function Home() {
                 <Button size="lg" className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white" asChild>
                   <Link href="/quote">Get Quote</Link>
                 </Button>
-                <Button size="lg" variant="outline" asChild>
-                  <Link href="/projects">
-                    View Our Projects <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
+                {homepageViewProjectsButtonVisible && (
+                  <Button size="lg" variant="outline" asChild>
+                    <Link href="/projects">
+                      View Our Projects <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                )}
                 <Button size="lg" variant="outline" asChild>
                   <a href={`tel:${ctaPhone}`} className="flex items-center gap-2">
                     <Phone className="h-5 w-5" />
                     Call Us
                   </a>
+                </Button>
+                <Button size="lg" variant="outline" asChild>
+                  <Link href="/payments">Make Payment</Link>
                 </Button>
               </div>
             </div>
@@ -191,7 +275,11 @@ export default function Home() {
         <section className="py-16 md:py-24">
           <div className="container mx-auto max-w-[600px] text-center">
             <h2 className="mb-4 text-3xl font-bold md:text-4xl">Quick Quote Request</h2>
-            <p className="mb-8 text-xl text-muted-foreground">Submit your contact info and we'll reach out to discuss your project. Want to provide more details? <a href="/quote" className="text-primary underline">Go to full quote form</a>.</p>
+            <p className="mb-8 text-xl text-muted-foreground">
+              <span className="hidden md:inline">Submit your contact info and we'll reach out to discuss your project. Want to provide more details? </span>
+              <span className="md:hidden">Submit your contact info. </span>
+              <a href="/quote" className="text-primary underline">Go to full quote form</a>.
+            </p>
             <QuickQuoteForm />
           </div>
         </section>
@@ -206,112 +294,105 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {[
-                {
-                  icon: Building2,
-                  title: "Concrete",
-                  description: "Expert concrete work for foundations, driveways, sidewalks, and more.",
-                },
-                {
-                  icon: HardHat,
-                  title: "General Labor",
-                  description: "Skilled and general labor for construction, site preparation, and support tasks.",
-                },
-                {
-                  icon: Hammer,
-                  title: "Painting",
-                  description: "Interior and exterior painting for homes, offices, and commercial spaces.",
-                },
-                {
-                  icon: Ruler,
-                  title: "Roofing",
-                  description: "Professional roofing installation, repair, and maintenance for all building types.",
-                },
-                {
-                  icon: Shield,
-                  title: "Remodeling",
-                  description: "Modernizing existing structures while preserving their character and integrity.",
-                },
-                {
-                  icon: Layers,
-                  title: "Landscaping",
-                  description: "Professional landscaping services to enhance outdoor spaces and curb appeal.",
-                },
-              ].map((service, index) => (
-                <Link
-                  key={index}
-                  href={`/${service.title.toLowerCase().replace(/ /g, '-')}`}
-                  className="group relative overflow-hidden rounded-xl border border-border/40 shadow-lg p-6 transition-all focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  style={{ background: 'linear-gradient(90deg, #0f172a 0%, #0e2a22 100%)', display: 'block', textDecoration: 'none' }}
-                >
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600/20 to-emerald-600/20 text-primary">
-                    <service.icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="mb-2 text-2xl font-bold text-white">{service.title}</h3>
-                  <p className="text-lg text-muted-foreground mb-6">{service.description}</p>
-                  <Button className="w-full bg-gradient-to-r from-blue-600 to-emerald-500 text-white font-semibold py-3 text-lg shadow">
-                    Learn more
-                  </Button>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Featured Projects */}
-        <section className="border-t border-border/40 bg-gradient-to-br from-background via-background/95 to-blue-950/10 py-16 md:py-24">
-          <div className="container">
-            <div className="mb-12 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-              <div>
-                <h2 className="mb-4 text-3xl font-bold md:text-4xl">Featured Projects</h2>
-                <p className="max-w-[600px] text-xl text-muted-foreground">
-                  Explore our portfolio of completed construction projects across various sectors.
-                </p>
-              </div>
-              <Button variant="outline" className="w-full md:w-auto" asChild>
-                <Link href="/projects">
-                  View All Projects <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {featuredProjects.length === 0 ? (
-                <div className="col-span-full text-center text-muted-foreground">No featured projects found.</div>
-              ) : (
-                featuredProjects.map((project, index) => (
-                <div
-                    key={project.id}
-                  className="group overflow-hidden rounded-xl border border-border/40 transition-all hover:border-primary/40"
-                  style={{ backgroundColor: '#141414' }}
-                >
-                  <div className="aspect-video overflow-hidden">
-                    <img
-                        src={project.image_url || `/placeholder.svg?height=300&width=500&text=${encodeURIComponent(project.title)}`}
-                      alt={project.title}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  </div>
-                  <div className="p-6">
-                    <div className="mb-2 flex items-center gap-2">
-                      <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                        {project.category}
-                      </span>
-                      <span className="text-xs text-muted-foreground">{project.location}</span>
-                    </div>
-                    <h3 className="mb-2 text-xl font-semibold">{project.title}</h3>
-                      <p className="mb-2 text-muted-foreground line-clamp-2">{project.description}</p>
-                      <Link href={`/projects/${project.id}`} className="inline-flex items-center text-sm font-medium text-primary">
-                      View Project <ArrowRight className="ml-1 h-4 w-4" />
-                    </Link>
-                  </div>
+                        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 mx-4 md:mx-8 lg:mx-12">
+              {services.length === 0 ? (
+                <div className="col-span-full text-center text-muted-foreground py-8">
+                  <div className="text-lg">Loading services...</div>
+                  <div className="text-sm">Services count: {services.length}</div>
                 </div>
+              ) : (
+                services.map((service, index) => (
+                  <Link
+                    key={service.id}
+                    href={`/${service.title.toLowerCase().replace(/ /g, '-')}`}
+                    className="group relative overflow-hidden rounded-lg border border-border/40 shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    style={{ background: 'linear-gradient(90deg, #0f172a 0%, #0e2a22 100%)', display: 'block', textDecoration: 'none' }}
+                  >
+                    {/* Thumbnail Image */}
+                    <div className="aspect-square overflow-hidden rounded-t-lg">
+                      <img
+                        src={service.image_url || `/placeholder.svg?height=200&width=200&text=${encodeURIComponent(service.title)}`}
+                        alt={`${service.title} service`}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        onError={(e) => {
+                          e.currentTarget.src = `/placeholder.svg?height=200&width=200&text=${encodeURIComponent(service.title)}`;
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="p-4">
+                      <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-blue-600/20 to-emerald-600/20 text-primary">
+                        {getServiceIcon(service.icon)}
+                      </div>
+                      <h3 className="mb-2 text-lg font-bold text-white line-clamp-1">{service.title}</h3>
+                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{service.description}</p>
+                      <Button className="w-full bg-gradient-to-r from-blue-600 to-emerald-500 text-white font-semibold py-2 text-sm shadow">
+                        Learn more
+                      </Button>
+                    </div>
+                  </Link>
                 ))
               )}
             </div>
           </div>
         </section>
+
+        {/* Featured Projects */}
+        {homepageProjectsVisible && (
+          <section className="border-t border-border/40 bg-gradient-to-br from-background via-background/95 to-blue-950/10 py-16 md:py-24">
+            <div className="container">
+              <div className="mb-12 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+                <div>
+                  <h2 className="mb-4 text-3xl font-bold md:text-4xl">Featured Projects</h2>
+                  <p className="max-w-[600px] text-xl text-muted-foreground">
+                    Explore our portfolio of completed construction projects across various sectors.
+                  </p>
+                </div>
+                <Button variant="outline" className="w-full md:w-auto" asChild>
+                  <Link href="/projects">
+                    View All Projects <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {featuredProjects.length === 0 ? (
+                  <div className="col-span-full text-center text-muted-foreground">No featured projects found.</div>
+                ) : (
+                  featuredProjects.map((project, index) => (
+                    <div
+                      key={project.id}
+                      className="group overflow-hidden rounded-xl border border-border/40 transition-all hover:border-primary/40"
+                      style={{ backgroundColor: '#141414' }}
+                    >
+                      <div className="aspect-video overflow-hidden">
+                        <img
+                          src={project.image_url || `/placeholder.svg?height=300&width=500&text=${encodeURIComponent(project.title)}`}
+                          alt={project.title}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      </div>
+                      <div className="p-6">
+                        <div className="mb-2 flex items-center gap-2">
+                          <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                            {project.category}
+                          </span>
+                          <span className="text-xs text-muted-foreground">{project.location}</span>
+                        </div>
+                        <h3 className="mb-2 text-xl font-semibold">{project.title}</h3>
+                        <p className="mb-2 text-muted-foreground line-clamp-2">{project.description}</p>
+                        <Link href={`/projects/${project.id}`} className="inline-flex items-center text-sm font-medium text-primary">
+                          View Project <ArrowRight className="ml-1 h-4 w-4" />
+                        </Link>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* CTA Section */}
         <section className="py-16 md:py-24">
@@ -336,80 +417,7 @@ export default function Home() {
         </section>
 
         {/* Footer */}
-        <footer className="border-t border-border/40 bg-card/30 py-12 md:py-16">
-          <div className="container">
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <div className="mb-4 flex items-center gap-2">
-                  <Building2 className="h-8 w-8 text-primary" />
-                  <span className="text-xl font-bold">Covion Builders</span>
-                </div>
-                <p className="mb-4 text-muted-foreground">
-                  Building the future with innovative construction solutions and sustainable practices.
-                </p>
-                <div className="flex space-x-4">
-                  {["Twitter", "LinkedIn", "Instagram", "Facebook"].map((social) => (
-                    <Link
-                      key={social}
-                      href="#"
-                      className="rounded-full bg-background p-2 text-foreground/80 transition-colors hover:text-primary"
-                    >
-                      <span className="sr-only">{social}</span>
-                      <div className="h-5 w-5" />
-                    </Link>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="mb-4 text-lg font-semibold">Services</h3>
-                <ul className="space-y-2">
-                  {[
-                    "Commercial Construction",
-                    "Industrial Projects",
-                    "Residential Development",
-                    "Roofing",
-                    "Renovation",
-                    "Infrastructure",
-                  ].map((item) => (
-                    <li key={item}>
-                      <Link href="#" className="text-muted-foreground transition-colors hover:text-primary">
-                        {item}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div>
-                <h3 className="mb-4 text-lg font-semibold">Company</h3>
-                <ul className="space-y-2">
-                  {["About Us", "Projects", "Sustainability", "Careers", "News", "Contact", "Login"].map((item) => (
-                    <li key={item}>
-                      <Link href={item === "Login" ? "/login" : "#"} className="text-muted-foreground transition-colors hover:text-primary">
-                        {item}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div>
-                <h3 className="mb-4 text-lg font-semibold">Contact</h3>
-                <div className="text-muted-foreground">
-                  <p className="mb-2">Serving California</p>
-                  <p className="mb-2">covionbuilders@gmail.com</p>
-                  <p className="mb-2">(951) 723-4052</p>
-                  <p><Link href="/contact" className="text-primary hover:underline">Contact Us</Link></p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-12 border-t border-border/40 pt-6 text-center text-sm text-muted-foreground">
-              <p>© {new Date().getFullYear()} Covion Builders. All rights reserved.</p>
-            </div>
-          </div>
-        </footer>
+        <Footer />
       </div>
     </>
   )

@@ -1,10 +1,15 @@
+'use client';
 import { Button } from "@/components/ui/button"
 import { Award, Building2, Clock, Users } from "lucide-react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import Head from 'next/head'
+import { useEffect, useState } from "react"
+import { createSupabaseBrowserClient } from "@/lib/supabaseClient"
 
 export default function AboutPage() {
+  const [aboutPageVisible, setAboutPageVisible] = useState(true);
+  const [loading, setLoading] = useState(true);
   const stats = [
     { value: "25+", label: "Years of Experience" },
     { value: "500+", label: "Projects Completed" },
@@ -61,6 +66,63 @@ export default function AboutPage() {
       bio: "Aisha ensures our projects incorporate the latest sustainable building practices and technologies, helping clients achieve their environmental goals while reducing long-term operating costs.",
     },
   ]
+
+  useEffect(() => {
+    // Fetch about page visibility setting
+    const fetchAboutPageVisibility = async () => {
+      try {
+        const supabase = createSupabaseBrowserClient();
+        const { data } = await supabase
+          .from('site_settings')
+          .select('setting_value')
+          .eq('setting_key', 'about_page_visible')
+          .single();
+        
+        if (data) {
+          setAboutPageVisible(data.setting_value === 'true');
+        }
+      } catch (err) {
+        // Default to visible if setting not found
+        setAboutPageVisible(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAboutPageVisibility();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="dark flex min-h-screen flex-col">
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!aboutPageVisible) {
+    return (
+      <div className="dark flex min-h-screen flex-col">
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold mb-4">Page Not Available</h1>
+            <p className="text-muted-foreground mb-6">This page is currently not available.</p>
+            <Button asChild>
+              <a href="/">Return to Home</a>
+            </Button>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <>

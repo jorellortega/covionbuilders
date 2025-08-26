@@ -4,7 +4,7 @@ import Footer from '@/components/footer';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
-import { Briefcase, User, CreditCard, PlusCircle, HelpCircle, Menu, BarChart2, Image, Users, DollarSign, Megaphone, Mail, AlertTriangle } from 'lucide-react';
+import { Briefcase, User, CreditCard, PlusCircle, HelpCircle, Menu, BarChart2, Image, Users, DollarSign, Megaphone, Mail, AlertTriangle, Building2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient"
 import { Card, CardContent } from "@/components/ui/card"
@@ -34,6 +34,12 @@ export default function CeoDashboardPage() {
   const [replies, setReplies] = useState<{ [messageId: string]: any[] }>({});
   const [newQuotesCount, setNewQuotesCount] = useState(0);
   const [recentQuotes, setRecentQuotes] = useState<any[]>([]);
+  const [homepageProjectsVisible, setHomepageProjectsVisible] = useState(true);
+  const [updatingVisibility, setUpdatingVisibility] = useState(false);
+  const [homepageViewProjectsButtonVisible, setHomepageViewProjectsButtonVisible] = useState(true);
+  const [updatingButtonVisibility, setUpdatingButtonVisibility] = useState(false);
+  const [aboutPageVisible, setAboutPageVisible] = useState(true);
+  const [updatingAboutVisibility, setUpdatingAboutVisibility] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -102,6 +108,105 @@ export default function CeoDashboardPage() {
     };
     fetchRecentQuotes();
   }, []);
+
+  useEffect(() => {
+    // Fetch homepage projects visibility setting
+    const fetchHomepageProjectsVisibility = async () => {
+      const supabase = createSupabaseBrowserClient();
+      const { data } = await supabase
+        .from('site_settings')
+        .select('setting_value')
+        .eq('setting_key', 'homepage_projects_visible')
+        .single();
+      
+      if (data) {
+        setHomepageProjectsVisible(data.setting_value === 'true');
+      }
+    };
+    fetchHomepageProjectsVisibility();
+  }, []);
+
+  useEffect(() => {
+    // Fetch homepage "View Our Projects" button visibility setting
+    const fetchHomepageViewProjectsButtonVisibility = async () => {
+      const supabase = createSupabaseBrowserClient();
+      const { data } = await supabase
+        .from('site_settings')
+        .select('setting_value')
+        .eq('setting_key', 'homepage_view_projects_button_visible')
+        .single();
+      
+      if (data) {
+        setHomepageViewProjectsButtonVisible(data.setting_value === 'true');
+      }
+    };
+    fetchHomepageViewProjectsButtonVisibility();
+  }, []);
+
+  useEffect(() => {
+    // Fetch about page visibility setting
+    const fetchAboutPageVisibility = async () => {
+      const supabase = createSupabaseBrowserClient();
+      const { data } = await supabase
+        .from('site_settings')
+        .select('setting_value')
+        .eq('setting_key', 'about_page_visible')
+        .single();
+      
+      if (data) {
+        setAboutPageVisible(data.setting_value === 'true');
+      }
+    };
+    fetchAboutPageVisibility();
+  }, []);
+
+  const toggleHomepageProjectsVisibility = async () => {
+    setUpdatingVisibility(true);
+    const supabase = createSupabaseBrowserClient();
+    const newValue = !homepageProjectsVisible;
+    
+    const { error } = await supabase
+      .from('site_settings')
+      .update({ setting_value: newValue.toString() })
+      .eq('setting_key', 'homepage_projects_visible');
+    
+    if (!error) {
+      setHomepageProjectsVisible(newValue);
+    }
+    setUpdatingVisibility(false);
+  };
+
+  const toggleHomepageViewProjectsButtonVisibility = async () => {
+    setUpdatingButtonVisibility(true);
+    const supabase = createSupabaseBrowserClient();
+    const newValue = !homepageViewProjectsButtonVisible;
+    
+    const { error } = await supabase
+      .from('site_settings')
+      .update({ setting_value: newValue.toString() })
+      .eq('setting_key', 'homepage_view_projects_button_visible');
+    
+    if (!error) {
+      setHomepageViewProjectsButtonVisible(newValue);
+    }
+    setUpdatingButtonVisibility(false);
+  };
+
+  const toggleAboutPageVisibility = async () => {
+    setUpdatingAboutVisibility(true);
+    const supabase = createSupabaseBrowserClient();
+    const newValue = !aboutPageVisible;
+    
+    const { error } = await supabase
+      .from('site_settings')
+      .update({ setting_value: newValue.toString() })
+      .eq('setting_key', 'about_page_visible');
+    
+    if (!error) {
+      setAboutPageVisible(newValue);
+    }
+    setUpdatingAboutVisibility(false);
+  };
 
   const handleReplyChange = (id: string, value: string) => {
     setReplying(r => ({ ...r, [id]: value }));
@@ -189,6 +294,21 @@ export default function CeoDashboardPage() {
         {/* Main Content */}
         <main className="flex-1 p-8 overflow-y-auto">
           <h1 className="mb-8 text-4xl font-bold text-white text-center">CEO Dashboard</h1>
+          
+          {/* Quick Actions - Prominent Create Quote Button */}
+          <div className="mb-8 p-6 bg-gradient-to-r from-blue-900/30 to-emerald-900/30 rounded-xl border border-blue-500/40">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-white mb-2">Quick Actions</h2>
+              <p className="text-muted-foreground mb-6">Most frequently used functions</p>
+              <Link href="/create-quote">
+                <Button className="bg-gradient-to-r from-emerald-600 to-blue-500 text-white font-semibold px-8 py-4 text-lg shadow-lg hover:from-emerald-700 hover:to-blue-600 transition-all">
+                  <Building2 className="mr-2 h-6 w-6" />
+                  Create New Quote
+                </Button>
+              </Link>
+            </div>
+          </div>
+          
           {/* New Quotes Alert */}
           {newQuotesCount > 0 && (
             <div className="mb-8 p-4 bg-[#181c20] border-l-4 border-blue-500 rounded-xl flex flex-col gap-3 shadow">
@@ -284,6 +404,84 @@ export default function CeoDashboardPage() {
                 <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white font-semibold px-8 py-3 text-lg shadow w-full">View Messages</Button>
               </Link>
             </div>
+            <div className="rounded-xl border border-border/40 bg-[#141414] p-6 shadow-lg text-center">
+              <h2 className="text-2xl font-bold text-white mb-4">Homepage Projects</h2>
+              <div className="flex items-center justify-center gap-4 mb-4">
+                <span className="text-muted-foreground">Hidden</span>
+                <button
+                  onClick={toggleHomepageProjectsVisibility}
+                  disabled={updatingVisibility}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    homepageProjectsVisible ? 'bg-blue-600' : 'bg-gray-600'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      homepageProjectsVisible ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className="text-muted-foreground">Visible</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {homepageProjectsVisible ? 'Featured projects section is currently visible on homepage' : 'Featured projects section is currently hidden from homepage'}
+              </p>
+              {updatingVisibility && (
+                <div className="mt-2 text-blue-400 text-sm">Updating...</div>
+              )}
+            </div>
+            <div className="rounded-xl border border-border/40 bg-[#141414] p-6 shadow-lg text-center">
+              <h2 className="text-2xl font-bold text-white mb-4">Homepage "View Our Projects" Button</h2>
+              <div className="flex items-center justify-center gap-4 mb-4">
+                <span className="text-muted-foreground">Hidden</span>
+                <button
+                  onClick={toggleHomepageViewProjectsButtonVisibility}
+                  disabled={updatingButtonVisibility}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    homepageViewProjectsButtonVisible ? 'bg-blue-600' : 'bg-gray-600'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      homepageViewProjectsButtonVisible ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className="text-xs text-muted-foreground">Visible</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {homepageViewProjectsButtonVisible ? '"View Our Projects" button is currently visible on homepage' : '"View Our Projects" button is currently hidden from homepage'}
+              </p>
+              {updatingButtonVisibility && (
+                <div className="mt-2 text-blue-400 text-sm">Updating...</div>
+              )}
+            </div>
+            <div className="rounded-xl border border-border/40 bg-[#141414] p-6 shadow-lg text-center">
+              <h2 className="text-2xl font-bold text-white mb-4">About Us Page</h2>
+              <div className="flex items-center justify-center gap-4 mb-4">
+                <span className="text-muted-foreground">Hidden</span>
+                <button
+                  onClick={toggleAboutPageVisibility}
+                  disabled={updatingAboutVisibility}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    aboutPageVisible ? 'bg-blue-600' : 'bg-gray-600'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      aboutPageVisible ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className="text-xs text-muted-foreground">Visible</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {aboutPageVisible ? 'About Us page is currently visible to visitors' : 'About Us page is currently hidden from visitors'}
+              </p>
+              {updatingAboutVisibility && (
+                <div className="mt-2 text-blue-400 text-sm">Updating...</div>
+              )}
+            </div>
           </div>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-xl border border-border/40 bg-[#141414] p-6 shadow-lg">
@@ -353,9 +551,14 @@ export default function CeoDashboardPage() {
           <div className="mb-8">
             <h2 className="text-3xl font-bold mb-4">Quote Management</h2>
             <div className="flex flex-wrap gap-4 items-center mb-4">
-              <Link href="/allquotes">
-                <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white font-semibold">Go to All Quotes Dashboard</Button>
-              </Link>
+              <div className="flex gap-4">
+                <Link href="/allquotes">
+                  <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white font-semibold">Go to All Quotes Dashboard</Button>
+                </Link>
+                <Link href="/create-quote">
+                  <Button className="bg-gradient-to-r from-emerald-600 to-blue-500 text-white font-semibold">Create New Quote</Button>
+                </Link>
+              </div>
               <form onSubmit={e => { e.preventDefault(); if (staffQuoteId) router.push(`/quotes/${staffQuoteId}`); }} className="flex gap-2 items-center">
                 <input type="text" placeholder="Quote ID" value={staffQuoteId || ''} onChange={e => setStaffQuoteId(e.target.value)} className="rounded-lg px-3 py-2 bg-[#232323] text-white border border-border/40" />
                 <Button type="submit" className="bg-blue-600 text-white font-semibold">View as Staff</Button>

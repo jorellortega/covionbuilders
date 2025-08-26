@@ -126,7 +126,10 @@ export function QuickQuoteForm() {
         {errors.projectDescription && <div className="text-red-500 text-sm">{errors.projectDescription.message}</div>}
       </div>
       <div>
-        <label className="block mb-1 font-medium">Upload Photos or Files (optional)</label>
+        <label className="block mb-1 font-medium">
+          <span className="hidden md:inline">Upload Photos or Files (optional)</span>
+          <span className="md:hidden">optional</span>
+        </label>
         <input
           type="file"
           accept="image/*,.pdf,.doc,.docx"
