@@ -47,6 +47,7 @@ export default function Footer() {
     { name: "Projects", path: "/projects" },
     { name: "Careers", path: "/careers" },
     { name: "Contact", path: "/contact" },
+    { name: "Updates/Disputes", path: "/disputes" },
     { name: "Login", path: "/login", hideWhenLoggedIn: true },
   ];
 

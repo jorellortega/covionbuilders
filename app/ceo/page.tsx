@@ -4,7 +4,7 @@ import Footer from '@/components/footer';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
-import { Briefcase, User, CreditCard, PlusCircle, HelpCircle, Menu, BarChart2, Image, Users, DollarSign, Megaphone, Mail, AlertTriangle, Building2 } from 'lucide-react';
+import { Briefcase, User, CreditCard, PlusCircle, HelpCircle, Menu, BarChart2, Image, Users, DollarSign, Megaphone, Mail, AlertTriangle, Building2, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient"
 import { Card, CardContent } from "@/components/ui/card"
@@ -15,9 +15,11 @@ const ceoLinks = [
   { label: 'Update Placeholder Images', href: '/updatepix', icon: <Image className="h-5 w-5" /> },
   { label: 'Manage Projects', href: '/manageprojects', icon: <Briefcase className="h-5 w-5" /> },
   { label: 'Manage Users', href: '/users', icon: <Users className="h-5 w-5" /> },
-  { label: 'Manage Payments', href: '/payments', icon: <DollarSign className="h-5 w-5" /> },
+  { label: 'Manage Payments', href: '/payments-invoices', icon: <DollarSign className="h-5 w-5" /> },
   { label: 'Marketing Tools', href: '/marketing', icon: <Megaphone className="h-5 w-5" /> },
   { label: 'View Communications', href: '/communications', icon: <Mail className="h-5 w-5" /> },
+  { label: 'AI Settings', href: '/ai-settings', icon: <Sparkles className="h-5 w-5" /> },
+  { label: 'AI Info Editor', href: '/ai-info', icon: <Sparkles className="h-5 w-5" /> },
 ];
 
 export default function CeoDashboardPage() {
@@ -507,8 +509,8 @@ export default function CeoDashboardPage() {
             </div>
             <div className="rounded-xl border border-border/40 bg-[#141414] p-6 shadow-lg">
               <h2 className="mb-4 text-xl font-bold text-white">Manage Payments</h2>
-              <p className="mb-4 text-muted-foreground">View and manage payment records.</p>
-              <Link href="/payments">
+              <p className="mb-4 text-muted-foreground">View and manage payment records, invoices, and paid receipts.</p>
+              <Link href="/payments-invoices">
                 <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white font-semibold">Manage Payments</Button>
               </Link>
             </div>
@@ -545,6 +547,16 @@ export default function CeoDashboardPage() {
               <p className="mb-4 text-muted-foreground">Manage contract templates, upload contracts, and track signed agreements.</p>
               <Link href="/contracts">
                 <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white font-semibold">Manage Contracts</Button>
+              </Link>
+            </div>
+            <div className="rounded-xl border border-border/40 bg-[#141414] p-6 shadow-lg">
+              <h2 className="mb-4 text-xl font-bold text-white">AI Settings</h2>
+              <p className="mb-4 text-muted-foreground">Configure API keys for AI services like OpenAI and Anthropic.</p>
+              <Link href="/ai-settings">
+                <Button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white font-semibold">
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Configure AI
+                </Button>
               </Link>
             </div>
           </div>

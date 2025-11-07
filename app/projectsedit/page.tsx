@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowRight, Trash2, Edit, Save, Plus, UploadCloud } from "lucide-react";
+import { toast } from "sonner";
 import Header from '@/components/header';
+import Footer from '@/components/footer';
 
 type Project = {
   id: number;
@@ -16,6 +18,7 @@ type Project = {
   description: string;
   image_url: string;
   highlights: string[];
+  is_featured?: boolean;
 };
 
 type ProjectForm = {
@@ -26,6 +29,7 @@ type ProjectForm = {
   description: string;
   image_url: string;
   highlights: string;
+  is_featured: boolean;
 };
 
 export default function ProjectsEditPage() {
@@ -39,6 +43,7 @@ export default function ProjectsEditPage() {
     description: "",
     image_url: "",
     highlights: "",
+    is_featured: false,
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -65,19 +70,75 @@ export default function ProjectsEditPage() {
     setForm({
       ...project,
       highlights: Array.isArray(project.highlights) ? project.highlights.join("\n") : "",
+      is_featured: project.is_featured || false,
     });
   }
 
   function cancelEdit() {
     setEditingId(null);
-    setForm({ title: "", category: "", location: "", year: "", description: "", image_url: "", highlights: "" });
+    setForm({ title: "", category: "", location: "", year: "", description: "", image_url: "", highlights: "", is_featured: false });
     setImageFile(null);
   }
 
   async function handleDelete(id: number) {
-    if (!window.confirm("Delete this project?")) return;
-    await supabase.from("projects").delete().eq("id", id);
-    fetchProjects();
+    if (!window.confirm("Delete this project? This will also unlink it from any associated quotes.")) return;
+    
+    try {
+      // First, check if project is referenced by any quotes
+      const { data: quotesWithProject, error: checkError } = await supabase
+        .from("quote_requests")
+        .select("id")
+        .eq("project_id", id);
+      
+      const quoteCount = quotesWithProject?.length || 0;
+      
+      // Unlink this project from any quote_requests that reference it
+      if (quoteCount > 0) {
+        const { error: unlinkError } = await supabase
+          .from("quote_requests")
+          .update({ project_id: null })
+          .eq("project_id", id);
+        
+        if (unlinkError) {
+          console.error("Error unlinking quotes:", unlinkError);
+          // If RLS prevents update, we need to handle this differently
+          // Check if it's a permission error
+          if (unlinkError.code === '42501' || unlinkError.message.includes('permission') || unlinkError.message.includes('policy')) {
+            toast.error(`Cannot delete: Project is linked to ${quoteCount} quote(s) and you don't have permission to unlink them. Please unlink manually first.`);
+            return;
+          }
+          toast.warning("Could not unlink from quotes, attempting to delete anyway...");
+        } else {
+          toast.info(`Unlinked project from ${quoteCount} quote(s)`);
+        }
+      }
+      
+      // Then delete the project
+      const { error: deleteError } = await supabase
+        .from("projects")
+        .delete()
+        .eq("id", id);
+      
+      if (deleteError) {
+        console.error("Delete error:", deleteError);
+        // Provide more helpful error message
+        if (deleteError.code === '23503' || deleteError.message.includes('foreign key')) {
+          toast.error("Cannot delete: Project is still referenced by other records. Please unlink it from quotes first.");
+        } else if (deleteError.code === '42501' || deleteError.message.includes('permission')) {
+          toast.error("Permission denied: You don't have permission to delete projects.");
+        } else {
+          toast.error(`Failed to delete project: ${deleteError.message}`);
+        }
+        return;
+      }
+      
+      toast.success("Project deleted successfully!");
+      // Refresh the projects list
+      fetchProjects();
+    } catch (err: any) {
+      console.error("Error deleting project:", err);
+      toast.error(`Error deleting project: ${err.message}`);
+    }
   }
 
   async function handleSave(e: React.FormEvent<HTMLFormElement>) {
@@ -146,9 +207,20 @@ export default function ProjectsEditPage() {
             {form.image_url && <img src={form.image_url} alt="Project" className="mt-2 rounded-lg w-full max-w-xs" />}
             {uploading && <div className="text-blue-400 mt-2">Uploading...</div>}
           </div>
+          <div className="md:col-span-2">
+            <label className="flex items-center gap-2 text-white">
+              <input
+                type="checkbox"
+                checked={form.is_featured}
+                onChange={(e) => setForm({ ...form, is_featured: e.target.checked })}
+                className="rounded"
+              />
+              <span className="font-semibold">Featured Project</span>
+            </label>
+          </div>
           <div className="flex items-end">
             <Button type="submit" className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white font-semibold" disabled={uploading}>
-              <Save className="inline-block mr-2 h-5 w-5" /> Add Project
+              <Save className="inline-block mr-2 h-5 w-5" /> {editingId ? "Update Project" : "Add Project"}
             </Button>
           </div>
         </form>
@@ -191,6 +263,17 @@ export default function ProjectsEditPage() {
                       {form.image_url && <img src={form.image_url} alt="Project" className="mt-2 rounded-lg w-full max-w-xs" />}
                       {uploading && <div className="text-blue-400 mt-2">Uploading...</div>}
                     </div>
+                    <div>
+                      <label className="flex items-center gap-2 text-white">
+                        <input
+                          type="checkbox"
+                          checked={form.is_featured}
+                          onChange={(e) => setForm({ ...form, is_featured: e.target.checked })}
+                          className="rounded"
+                        />
+                        <span className="font-semibold">Featured Project</span>
+                      </label>
+                    </div>
                     <div className="flex gap-2">
                       <Button type="submit" className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white font-semibold" disabled={uploading}>
                         <Save className="inline-block mr-2 h-5 w-5" /> Update Project
@@ -205,6 +288,11 @@ export default function ProjectsEditPage() {
                         {project.category}
                       </span>
                       <span className="text-xs text-muted-foreground">{project.location}</span>
+                      {project.is_featured && (
+                        <span className="rounded-full bg-yellow-500/20 px-2 py-1 text-xs font-medium text-yellow-400">
+                          Featured
+                        </span>
+                      )}
                     </div>
                     <h3 className="mb-2 text-xl font-semibold text-white">{project.title}</h3>
                     <div className="mb-2 text-muted-foreground">{project.year}</div>
@@ -218,7 +306,7 @@ export default function ProjectsEditPage() {
                     <div className="mt-auto flex gap-2">
                       <Button size="sm" variant="outline" onClick={() => startEdit(project)}><Edit className="h-4 w-4 mr-1" />Edit</Button>
                       <Button size="sm" variant="destructive" onClick={() => handleDelete(project.id)}><Trash2 className="h-4 w-4 mr-1" />Delete</Button>
-                      <a href={`/projects/${project.title.toLowerCase().replace(/\s+/g, '-')}`} target="_blank" rel="noopener noreferrer">
+                      <a href={`/projects/${project.id}`} target="_blank" rel="noopener noreferrer">
                         <Button size="sm" variant="secondary"><ArrowRight className="h-4 w-4 mr-1" />View Details</Button>
                       </a>
                     </div>
@@ -229,6 +317,7 @@ export default function ProjectsEditPage() {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 } 

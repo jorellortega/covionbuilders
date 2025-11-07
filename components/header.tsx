@@ -93,6 +93,7 @@ export default function Header() {
                 ...(aboutPageVisible ? [{ name: "About", path: "/about" }] : []),
                 { name: "Careers", path: "/careers" },
                 { name: "Contact", path: "/contact" },
+                { name: "Infinito AI", path: "/infinito-ai" },
               ]
                 .concat(isLoggedIn ? [{ name: "Dashboard", path: dashboardHref }] : [{ name: "Login", path: "/login" }])
                 .map((item) => (

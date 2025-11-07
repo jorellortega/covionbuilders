@@ -1,7 +1,7 @@
 'use client';
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Building2, Hammer, HardHat, Layers, Ruler, Shield, Phone } from "lucide-react"
+import { ArrowRight, Building2, Hammer, HardHat, Layers, Ruler, Shield, Phone, Sparkles, Infinity } from "lucide-react"
 import { useEffect, useState } from "react"
 import Head from 'next/head';
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
@@ -243,6 +243,12 @@ export default function Home() {
                 <Button size="lg" variant="outline" asChild>
                   <Link href="/payments">Make Payment</Link>
                 </Button>
+                <Button size="lg" variant="outline" className="border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10" asChild>
+                  <Link href="/infinito-ai" className="flex items-center gap-2">
+                    <Infinity className="h-5 w-5" />
+                    Talk to AI
+                  </Link>
+                </Button>
               </div>
             </div>
             <div className="relative flex items-center justify-center">
@@ -409,6 +415,12 @@ export default function Home() {
                   </Button>
                   <Button size="lg" variant="outline" asChild>
                     <Link href="/contact">Contact Our Team</Link>
+                  </Button>
+                  <Button size="lg" variant="outline" className="border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10" asChild>
+                    <Link href="/infinito-ai" className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      Talk to AI
+                    </Link>
                   </Button>
                 </div>
               </div>

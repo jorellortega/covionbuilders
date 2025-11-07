@@ -63,7 +63,7 @@ const stats = [
 
 const dashboardLinks = [
   { label: 'Project Overview', href: '/dashboard/projects', icon: <Briefcase className="h-5 w-5" /> },
-  { label: 'Payments & Invoices', href: '/dashboard/payments', icon: <CreditCard className="h-5 w-5" /> },
+  { label: 'Payments & Invoices', href: '/payments-invoices', icon: <CreditCard className="h-5 w-5" /> },
   { label: 'Project Timeline', href: '/dashboard/timeline', icon: <CheckCircle className="h-5 w-5" /> },
   { label: 'Documents', href: '/dashboard/documents', icon: <User className="h-5 w-5" /> },
   { label: 'Communication & Support', href: '/dashboard/communication', icon: <HelpCircle className="h-5 w-5" /> },
