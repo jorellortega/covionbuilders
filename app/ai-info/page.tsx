@@ -8,9 +8,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Loader2, Save, Sparkles, AlertCircle, Wand2, Infinity, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, Save, Sparkles, AlertCircle, Wand2, Infinity, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
+
+interface CustomSection {
+  id: string;
+  title: string;
+  content: string;
+}
 
 interface PromptSections {
   introduction: string;
@@ -20,6 +26,7 @@ interface PromptSections {
   websiteFeatures: string;
   role: string;
   important: string;
+  customSections: CustomSection[];
 }
 
 export default function AIInfoPage() {
@@ -31,6 +38,7 @@ export default function AIInfoPage() {
     websiteFeatures: '',
     role: '',
     important: '',
+    customSections: [],
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -86,37 +94,88 @@ export default function AIInfoPage() {
       websiteFeatures: '',
       role: '',
       important: '',
+      customSections: [],
     };
 
     if (!prompt) return defaultSections;
 
+    // Known section headers (all caps)
+    const knownHeaders = [
+      'COMPANY INFORMATION',
+      'SERVICES OFFERED',
+      'WEBSITE FEATURES',
+      'YOUR ROLE',
+      'IMPORTANT',
+    ];
+
     // Split by section headers (all caps followed by colon)
     const introMatch = prompt.match(/^(.*?)(?=COMPANY INFORMATION:|$)/s);
-    const companyMatch = prompt.match(/COMPANY INFORMATION:\s*([\s\S]*?)(?=SERVICES OFFERED:|WEBSITE FEATURES:|YOUR ROLE:|IMPORTANT:|$)/);
-    const servicesMatch = prompt.match(/SERVICES OFFERED:\s*([\s\S]*?)(?=WEBSITE FEATURES:|YOUR ROLE:|IMPORTANT:|$)/);
-    const websiteMatch = prompt.match(/WEBSITE FEATURES:\s*([\s\S]*?)(?=YOUR ROLE:|IMPORTANT:|$)/);
-    const roleMatch = prompt.match(/YOUR ROLE:\s*([\s\S]*?)(?=IMPORTANT:|$)/);
-    const importantMatch = prompt.match(/IMPORTANT:\s*([\s\S]*?)$/s);
+    
+    // Find all section headers in the prompt
+    const sectionRegex = /\n\n([A-Z][A-Z\s]+):\s*([\s\S]*?)(?=\n\n[A-Z][A-Z\s]+:|$)/g;
+    const allSections: Array<{ header: string; content: string; index: number }> = [];
+    let match;
+    
+    while ((match = sectionRegex.exec(prompt)) !== null) {
+      allSections.push({
+        header: match[1].trim(),
+        content: match[2].trim(),
+        index: match.index,
+      });
+    }
+
+    // Extract known sections
+    const companyMatch = allSections.find(s => s.header === 'COMPANY INFORMATION');
+    const servicesMatch = allSections.find(s => s.header === 'SERVICES OFFERED');
+    const websiteMatch = allSections.find(s => s.header === 'WEBSITE FEATURES');
+    const roleMatch = allSections.find(s => s.header === 'YOUR ROLE');
+    const importantMatch = allSections.find(s => s.header === 'IMPORTANT');
 
     // Extract primary and additional services
     let servicesPrimary = '';
     let servicesAdditional = '';
     if (servicesMatch) {
-      const servicesText = servicesMatch[1];
+      const servicesText = servicesMatch.content;
       const primaryMatch = servicesText.match(/Primary Construction Services:\s*([\s\S]*?)(?=Additional Services:|$)/);
       const additionalMatch = servicesText.match(/Additional Services:\s*([\s\S]*?)$/);
       servicesPrimary = primaryMatch ? primaryMatch[1].trim() : '';
       servicesAdditional = additionalMatch ? additionalMatch[1].trim() : '';
     }
 
+    // Extract custom sections (any section header that's not in the known list)
+    const customSections: CustomSection[] = [];
+    let sectionIdCounter = 0;
+    
+    allSections.forEach((section) => {
+      const header = section.header;
+      
+      // Check if it's not a known header
+      if (!knownHeaders.includes(header) && 
+          header !== 'Primary Construction Services' && 
+          header !== 'Additional Services') {
+        // Convert header back to title case (preserve original if it was mixed case)
+        // Since we're storing in uppercase in the prompt, we'll convert to title case for display
+        const title = header.split(' ').map(word => 
+          word.charAt(0) + word.slice(1).toLowerCase()
+        ).join(' ');
+        
+        customSections.push({
+          id: `custom-${sectionIdCounter++}`,
+          title: title,
+          content: section.content,
+        });
+      }
+    });
+
     return {
       introduction: introMatch ? introMatch[1].trim() : defaultSections.introduction,
-      companyInfo: companyMatch ? companyMatch[1].trim() : '',
+      companyInfo: companyMatch?.content || '',
       servicesPrimary,
       servicesAdditional,
-      websiteFeatures: websiteMatch ? websiteMatch[1].trim() : '',
-      role: roleMatch ? roleMatch[1].trim() : '',
-      important: importantMatch ? importantMatch[1].trim() : '',
+      websiteFeatures: websiteMatch?.content || '',
+      role: roleMatch?.content || '',
+      important: importantMatch?.content || '',
+      customSections,
     };
   };
 
@@ -148,6 +207,13 @@ export default function AIInfoPage() {
     if (sections.important) {
       prompt += '\n\nIMPORTANT:\n' + sections.important;
     }
+    
+    // Add custom sections
+    sections.customSections.forEach((customSection) => {
+      if (customSection.title && customSection.content) {
+        prompt += '\n\n' + customSection.title.toUpperCase() + ':\n' + customSection.content;
+      }
+    });
     
     return prompt.trim();
   };
@@ -213,6 +279,40 @@ export default function AIInfoPage() {
 
   const handleSectionChange = (key: keyof PromptSections, value: string) => {
     setSections(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleAddCustomSection = () => {
+    const newSection: CustomSection = {
+      id: `custom-${Date.now()}`,
+      title: 'New Section',
+      content: '',
+    };
+    setSections(prev => ({
+      ...prev,
+      customSections: [...prev.customSections, newSection],
+    }));
+    setExpandedSections(prev => ({ ...prev, [newSection.id]: true }));
+  };
+
+  const handleRemoveCustomSection = (id: string) => {
+    setSections(prev => ({
+      ...prev,
+      customSections: prev.customSections.filter(section => section.id !== id),
+    }));
+    setExpandedSections(prev => {
+      const newState = { ...prev };
+      delete newState[id];
+      return newState;
+    });
+  };
+
+  const handleCustomSectionChange = (id: string, field: 'title' | 'content', value: string) => {
+    setSections(prev => ({
+      ...prev,
+      customSections: prev.customSections.map(section =>
+        section.id === id ? { ...section, [field]: value } : section
+      ),
+    }));
   };
 
   const handleGenerateWithAI = async (sectionKey?: keyof PromptSections) => {
@@ -558,6 +658,81 @@ export default function AIInfoPage() {
                 </CollapsibleContent>
               </Card>
             </Collapsible>
+
+            {/* Custom Sections */}
+            {sections.customSections.map((customSection) => (
+              <Collapsible
+                key={customSection.id}
+                open={expandedSections[customSection.id]}
+                onOpenChange={(open) => setExpandedSections(prev => ({ ...prev, [customSection.id]: open }))}
+              >
+                <Card className="bg-[#141414] border-border/40">
+                  <CardHeader className="relative">
+                    <div className="flex items-center justify-between pr-10">
+                      <CollapsibleTrigger className="flex-1 text-left cursor-pointer hover:bg-black/20 transition-colors -m-6 p-6 rounded-t-lg">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <CardTitle className="text-white">{customSection.title || 'Untitled Section'}</CardTitle>
+                            <CardDescription className="text-muted-foreground">
+                              Custom section
+                            </CardDescription>
+                          </div>
+                          {expandedSections[customSection.id] ? (
+                            <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                          )}
+                        </div>
+                      </CollapsibleTrigger>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/10 absolute top-6 right-6"
+                        onClick={() => handleRemoveCustomSection(customSection.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CollapsibleContent>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium text-white mb-2 block">Section Title</label>
+                        <Input
+                          value={customSection.title}
+                          onChange={(e) => handleCustomSectionChange(customSection.id, 'title', e.target.value)}
+                          className="bg-black/30 text-white border-border/40"
+                          placeholder="Section Title (will be converted to UPPERCASE in prompt)"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-white mb-2 block">Section Content</label>
+                        <Textarea
+                          value={customSection.content}
+                          onChange={(e) => handleCustomSectionChange(customSection.id, 'content', e.target.value)}
+                          className="min-h-[200px] bg-black/30 text-white border-border/40 font-mono text-sm"
+                          placeholder="Enter section content here..."
+                        />
+                      </div>
+                    </CardContent>
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
+            ))}
+
+            {/* Add Section Button */}
+            <Card className="bg-[#141414] border-border/40 border-dashed">
+              <CardContent className="pt-6">
+                <Button
+                  onClick={handleAddCustomSection}
+                  variant="outline"
+                  className="w-full border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add New Section
+                </Button>
+              </CardContent>
+            </Card>
 
             {/* Action Buttons */}
             <Card className="bg-[#141414] border-border/40">

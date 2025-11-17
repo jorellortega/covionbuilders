@@ -4,7 +4,7 @@ import Footer from '@/components/footer';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
-import { Briefcase, User, CreditCard, PlusCircle, HelpCircle, Menu, BarChart2, Image, Users, DollarSign, Megaphone, Mail, AlertTriangle, Building2, Sparkles } from 'lucide-react';
+import { Briefcase, User, CreditCard, PlusCircle, HelpCircle, Menu, BarChart2, Image, Users, DollarSign, Megaphone, Mail, AlertTriangle, Building2, Sparkles, Wrench, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient"
 import { Card, CardContent } from "@/components/ui/card"
@@ -14,6 +14,8 @@ import { Textarea } from '@/components/ui/textarea';
 const ceoLinks = [
   { label: 'Update Placeholder Images', href: '/updatepix', icon: <Image className="h-5 w-5" /> },
   { label: 'Manage Projects', href: '/manageprojects', icon: <Briefcase className="h-5 w-5" /> },
+  { label: 'Manage Services', href: '/servicesedit', icon: <Wrench className="h-5 w-5" /> },
+  { label: 'Manage Service Pages', href: '/manage-service-pages', icon: <FileText className="h-5 w-5" /> },
   { label: 'Manage Users', href: '/users', icon: <Users className="h-5 w-5" /> },
   { label: 'Manage Payments', href: '/payments-invoices', icon: <DollarSign className="h-5 w-5" /> },
   { label: 'Marketing Tools', href: '/marketing', icon: <Megaphone className="h-5 w-5" /> },
